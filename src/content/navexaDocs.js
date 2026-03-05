@@ -349,7 +349,7 @@ PY`
           "LLM mode improves table-of-contents detection and can generate summaries. Set credentials first, then rerun with `mode=\"llm\"`.",
         language: "bash",
         code: `export OPENAI_API_KEY="..."
-export OPENAI_MODEL="gpt-4.1-mini"
+export OPENAI_MODEL_NAME="gpt-4.1-mini"
 
 python - <<'PY'
 from navexa import index_structured_document_tree
@@ -506,7 +506,7 @@ NAVEXA_DOCLING_IMAGE_MODE=placeholder`
             ["3", "if provider=azure: AZURE_DEPLOYMENT_NAME"],
             [
               "4",
-              "if missing: raise error -> openai: 'OPENAI_MODEL_NAME is required', azure: 'AZURE_DEPLOYMENT_NAME is required'"
+              "if missing: raise error -> 'Model is not configured. Pass model=... explicitly, or set OPENAI_MODEL_NAME (openai) / AZURE_DEPLOYMENT_NAME (azure).'"
             ]
           ]
         }
@@ -669,7 +669,7 @@ load_navexa_env()  # reads NAVEXA_ENV_FILE / .env as described above`
           rows: [
             ["Structured data", "Clean sectioned PDFs", "Optional", "Regulatory label / technical manual"],
             ["Semi-structured data", "Inconsistent heading styles", "Required", "Mixed-format policy/compliance PDF"],
-            ["Unstructured data", "Weak/missing headings", "Required", "Narrative report / OCR-heavy file"],
+            ["Unstructured data", "Weak/missing headings", "Optional (recommended)", "Narrative report / OCR-heavy file"],
             ["Transcript data", "Interview/call transcripts", "Required", "Meeting transcript / support call"]
           ]
         }
@@ -685,8 +685,8 @@ load_navexa_env()  # reads NAVEXA_ENV_FILE / .env as described above`
         fix: "Use structured mode for heading-heavy docs and transcript mode only for conversation-style text."
       },
       {
-        mistake: "Assuming all modes support no-LLM",
-        fix: "Remember unstructured, transcript, and semi-structured are LLM-required flows."
+        mistake: "Assuming all modes require LLM",
+        fix: "Only transcript is strictly LLM-required by pipeline. Semi-structured wrapper enforces LLM mode, while unstructured can run with or without LLM."
       },
       {
         mistake: "Forgetting prompt overrides exist",
@@ -771,6 +771,7 @@ print(saved.paths)`
             ["verbosity", "debug depth", "low | medium | high"],
             ["parser_model", "parser backend selection", "docling"],
             ["output_format", "parser output style", "markdown | text"],
+            ["docling_options", "Override parser profile/OCR in code", "{ profile: 'balanced', ... }"],
             ["max_token_num_each_node", "split large nodes", "12000 or lower"],
             ["max_page_num_each_node", "split long page spans", "8 or lower"],
             ["if_add_node_summary", "cost vs summary coverage", "no | yes"]
@@ -851,6 +852,7 @@ AZURE_DEPLOYMENT_RAW_NAME=gpt-4.1-mini`
             ["verbosity", "Debug depth", "low | medium | high"],
             ["parser_model", "Parser backend", "docling"],
             ["output_format", "Parser output style", "markdown | text"],
+            ["docling_options", "Override parser profile/OCR in code", "{ profile: 'balanced', ... }"],
             ["max_token_num_each_node", "Split large nodes", "12000 or lower"],
             ["max_page_num_each_node", "Split long page spans", "8 or lower"],
             ["if_add_node_summary", "Cost vs summary coverage", "no | yes"],
@@ -899,28 +901,29 @@ save_document_tree(result, "/absolute/path/out", write_tree=True, write_validati
       "A usable tree when documents lack good section headers.",
       "A retrieval-ready structure from otherwise noisy content."
     ],
-    prerequisites: ["Input PDF with weak heading quality", "LLM credentials configured"],
+    prerequisites: ["Input PDF with weak heading quality", "Optional: LLM credentials for better section titles/summaries"],
     steps: [
       {
         title: "Run unstructured index",
-        body: "Unstructured flow is LLM-required and should run with a valid model/deployment.",
+        body: "Unstructured flow can run in `no-llm` or `llm`. Start with `no-llm`, then enable LLM for better section quality if needed.",
         language: "python",
         code: `from navexa import index_unstructured_document_tree
 
 result = index_unstructured_document_tree(
     pdf_path="/absolute/path/unstructured.pdf",
-    model="gpt-4.1-mini",   # Azure: deployment name
+    mode="no-llm",
     if_add_node_summary="no",
     verbosity="medium",
 )`
       },
       {
         title: "Tune summary behavior",
-        body: "Keep summaries off for lower cost, or enable summaries for readability.",
+        body: "Switch to LLM mode when you want stronger generated section titles/summaries.",
         language: "python",
         code: `result = index_unstructured_document_tree(
     pdf_path="/absolute/path/unstructured.pdf",
-    model="gpt-4.1-mini",
+    mode="llm",
+    model="gpt-4.1-mini",   # Azure: deployment name
     if_add_node_summary="yes",
 )`
       },
@@ -933,10 +936,11 @@ result = index_unstructured_document_tree(
           rows: [
             ["pdf_path", "Input document location", "/absolute/path/unstructured.pdf"],
             ["model", "Choose model/deployment", "gpt-4.1-mini or Azure deployment"],
-            ["mode", "Execution mode (use llm for this flow)", "llm"],
+            ["mode", "Choose deterministic or LLM-assisted", "no-llm | llm"],
             ["verbosity", "Debug depth", "low | medium | high"],
             ["parser_model", "Parser backend", "docling"],
             ["output_format", "Parser output style", "markdown | text"],
+            ["docling_options", "Override parser profile/OCR in code", "{ profile: 'balanced', ... }"],
             ["max_token_num_each_node", "Split large nodes", "12000 or lower"],
             ["max_page_num_each_node", "Split long page spans", "8 or lower"],
             ["if_add_node_summary", "Cost vs summary coverage", "no | yes"]
@@ -959,8 +963,8 @@ tree = fetch_document_tree("/absolute/path/out")`
     ],
     commonMistakes: [
       {
-        mistake: "Running unstructured flow without a model/key",
-        fix: "Set provider + credentials + model/deployment before indexing."
+        mistake: "Forgetting to set `mode` explicitly",
+        fix: "Use `mode=\"no-llm\"` for deterministic runs, and `mode=\"llm\"` only when credentials/model are configured."
       }
     ],
     tryIt: [
@@ -990,26 +994,27 @@ tree = fetch_document_tree("/absolute/path/out")`
     steps: [
       {
         title: "Run transcript index",
-        body: "Transcript flow is LLM-required and should use text-oriented parsing.",
+        body:
+          "Transcript flow is LLM-required. It uses the transcript text extractor path; `output_format` does not currently change transcript parsing.",
         language: "python",
         code: `from navexa import index_transcript_document_tree
 
 result = index_transcript_document_tree(
     pdf_path="/absolute/path/transcript.pdf",
     model="gpt-4.1-mini",   # Azure: deployment name
-    output_format="text",
     verbosity="medium",
     if_add_node_summary="yes",
 )`
       },
       {
         title: "Recommended transcript environment values",
-        body: "Use text output and keep OCR off unless the source is scanned.",
+        body:
+          "Set transcript type and LLM provider values. Note: Docling output format/OCR flags are not used in transcript parsing path.",
         language: "dotenv",
         code: `NAVEXA_DOCUMENT_TYPE=transcript
-NAVEXA_PARSER_MODEL=docling
-NAVEXA_DOCLING_OUTPUT_FORMAT=text
-NAVEXA_DOCLING_OCR=0`
+NAVEXA_LLM_PROVIDER=openai
+OPENAI_API_KEY=...
+OPENAI_MODEL_NAME=gpt-4.1-mini`
       },
       {
         title: "Variables you usually change",
@@ -1022,7 +1027,8 @@ NAVEXA_DOCLING_OCR=0`
             ["model", "Choose model/deployment", "gpt-4.1-mini or Azure deployment"],
             ["verbosity", "Debug depth", "low | medium | high"],
             ["parser_model", "Parser backend", "docling"],
-            ["output_format", "Text-first transcript parsing", "text"],
+            ["output_format", "Accepted for API parity; currently ignored in transcript parsing", "markdown or text"],
+            ["docling_options", "Ignored for transcript flow (uses transcript text extractor)", "None"],
             ["max_token_num_each_node", "Split large topic nodes", "12000 or lower"],
             ["max_page_num_each_node", "Split long page spans", "8 or lower"],
             ["if_add_node_summary", "Cost vs summary coverage", "no | yes"],
@@ -1051,8 +1057,8 @@ print(saved.paths["tree_navexa"])`
     ],
     commonMistakes: [
       {
-        mistake: "Using markdown output for transcript-heavy documents",
-        fix: "Prefer `output_format=\"text\"` for cleaner topic extraction."
+        mistake: "Expecting `output_format` to change transcript parsing",
+        fix: "It currently does not affect transcript flow. Focus on `model`, `verbosity`, and `transcript_topic_prompt_template`."
       }
     ],
     tryIt: [
@@ -1346,7 +1352,8 @@ compat = fetch_compat_tree("/absolute/path/out")  # optional`
             ["Select nodes with LLM", "How node selection works", "reason_over_tree, print_reasoning_trace"],
             ["Extract context and answer", "Context strategy + grounded answer", "extract_selected_context, answer_from_context"],
             ["One-call helper", "Run full flow in one function", "run_reasoning_rag"],
-            ["Custom prompt + external LLM", "Override prompts/provider cleanly", "prompt_template, llm_callable"]
+            ["Custom prompt define", "Override built-in prompt templates safely", "prompt_template, tree_prompt_template, answer_prompt_template"],
+            ["Custom LLM define", "Plug your own external adapter", "llm_callable, BaseExternalLLM"]
           ]
         }
       },
@@ -1470,7 +1477,6 @@ node_index_light = build_node_index(
     exclude_fields={
         "exclusive_text",
         "full_text",
-        "prefix_summary",
         "start_index",
         "end_index",
     },
@@ -1540,7 +1546,7 @@ node_index_light['0001']:
       {
         title: "Function: reason_over_tree",
         body:
-          "Run reasoning with the tree document, and use `node_index` only for readable trace output.",
+          "Run reasoning with a light node map (or the full tree document), then use `print_reasoning_trace(...)` for readable output.",
         language: "python",
         code: `from navexa import reason_over_tree
 from navexa import print_reasoning_trace, build_node_index
@@ -1551,7 +1557,6 @@ node_index_light = build_node_index(
     exclude_fields={
         "exclusive_text",
         "full_text",
-        "prefix_summary",
         "start_index",
         "end_index",
     },
@@ -1577,7 +1582,7 @@ print_reasoning_trace(reasoning, node_index_light)`,
             ["tree", "dict", "Input for selection (tree or light node map, based on your workflow)"],
             ["model", "str | None", "Model/deployment override"],
             ["prompt_template", "str | callable | None", "Custom tree-search prompt template"],
-            ["llm_callable", "callable | None", "Custom LLM function override"],
+            ["llm_callable", "BaseExternalLLM | None", "External adapter override (optional)"],
             ["return_prompt", "bool", "Include used prompt in output"],
             ["verbosity", "str | None", "low/medium/high"],
             ["strip_fields", "Sequence[str]", "Fields removed before tree prompt"],
@@ -1711,7 +1716,7 @@ print(answer.answer)`,
             ["context_text", "str", "Retrieved context text"],
             ["model", "str | None", "Model/deployment override"],
             ["prompt_template", "str | callable | None", "Custom answer prompt template"],
-            ["llm_callable", "callable | None", "Custom LLM function override"],
+            ["llm_callable", "BaseExternalLLM | None", "External adapter override (optional)"],
             ["return_prompt", "bool", "Include used prompt in result"],
             ["verbosity", "str | None", "low/medium/high"],
             ["prompt_extra", "dict | None", "Extra template payload"]
@@ -1801,7 +1806,7 @@ print(rag.cost_delta)`,
             ["model", "str | None", "Model/deployment override"],
             ["tree_prompt_template", "str | callable | None", "Custom tree-search prompt template"],
             ["answer_prompt_template", "str | callable | None", "Custom answer prompt template"],
-            ["llm_callable", "callable | None", "Custom provider/model function"],
+            ["llm_callable", "BaseExternalLLM | None", "External adapter override (optional)"],
             ["return_prompt", "bool", "Include prompt text in outputs"],
             ["verbosity", "str | None", "low/medium/high"],
             ["strip_fields", "Sequence[str]", "Fields removed in tree prompt view"],
@@ -1871,102 +1876,411 @@ Cost delta:
     ],
     nextSteps: [
       {
-        title: "Custom prompt + external LLM",
-        body: "Use your own prompt text and provider callable.",
-        to: "/docs/reasoning-custom"
+        title: "Custom prompt define",
+        body: "Create your own prompt templates for tree selection and answer generation.",
+        to: "/docs/reasoning-custom-prompt"
+      },
+      {
+        title: "Custom LLM define",
+        body: "Plug your own external LLM adapter (BaseExternalLLM).",
+        to: "/docs/reasoning-custom-llm"
       }
     ]
   }),
   withCoreToc({
-    id: "reasoning-custom",
+    id: "reasoning-custom-prompt",
     navParentId: "reasoning",
     category: "Core concepts",
-    title: "Custom prompt + external LLM",
+    title: "Custom prompt define",
     description:
-      "This subsection shows how to plug in custom prompt templates and your own model/provider function.",
+      "Use your own prompt templates for tree selection and answer generation, while keeping Navexa workflow and output format.",
     whatYouBuild: [
-      "A custom prompt strategy for node selection and answer generation.",
-      "A provider-agnostic integration via `llm_callable`."
+      "Custom tree-selection prompt behavior.",
+      "Custom answer style/policy using your own prompt text."
     ],
-    prerequisites: ["Basic reasoning flow working", "Custom model/provider endpoint (optional)"],
+    prerequisites: ["Reasoning flow working with default prompts"],
     steps: [
       {
-        title: "Use custom prompt templates",
-        body: "Pass template strings or callables to override built-in prompt rendering.",
+        title: "Custom prompt in reason_over_tree",
+        body:
+          "Use `prompt_template` to override the tree-selection prompt. Use `prompt_extra` to pass policy/config JSON.",
         language: "python",
-        code: `custom_tree_prompt = """You are a strict selector. Return JSON with thinking and node_list only."""
-custom_answer_prompt = """Answer only from context. If missing, say not found."""
+        code: `from navexa import reason_over_tree
 
-rag = run_reasoning_rag(
-    query="What are key risks?",
-    tree_or_source=tree,
-    tree_prompt_template=custom_tree_prompt,
-    answer_prompt_template=custom_answer_prompt,
+custom_tree_prompt = """
+You are a strict node selector.
+Question: {query}
+Tree: {tree_json}
+Constraints: {extra_json}
+Return JSON:
+{"thinking":"...", "node_list":["0001"]}
+"""
+
+reasoning = reason_over_tree(
+    query="What are key warnings?",
+    tree=tree,
+    model="gpt-4.1-mini",
+    prompt_template=custom_tree_prompt,
+    prompt_extra={"max_nodes": 3, "must_include_terms": ["warning", "precaution"]},
+    return_prompt=True,
 )`,
         table: {
           headers: ["Variable", "Type", "Description"],
           rows: [
-            ["tree_prompt_template", "str | callable | None", "Overrides tree selection prompt"],
-            ["answer_prompt_template", "str | callable | None", "Overrides answer prompt"],
-            ["tree_prompt_extra", "dict | None", "Extra variables injected into tree prompt"],
-            ["answer_prompt_extra", "dict | None", "Extra variables injected into answer prompt"]
+            ["prompt_template", "str | callable | None", "Custom tree-search template"],
+            ["prompt_extra", "dict | None", "Extra JSON payload injected into template"],
+            ["return_prompt", "bool", "Return the exact prompt used (`used_prompt`)"]
           ]
         }
       },
       {
-        title: "Use custom llm_callable (external provider)",
-        body: "Inject your own LLM function; Navexa will call it for both stages.",
+        title: "Custom prompt in answer_from_context",
+        body:
+          "Use `prompt_template` to enforce answer style and safety rules. Use `prompt_extra` for dynamic controls.",
         language: "python",
-        code: `def my_llm(prompt: str, model: str, stage: str):
-    # stage: tree_search | answer_generation
-    if stage == "tree_search":
-        return {"thinking": "selected safety nodes", "node_list": ["0012", "0015"]}
-    return "Grounded answer from provided context."
+        code: `from navexa import answer_from_context
+
+answer_template = """
+Answer only from context.
+Question: {query}
+Context: {context}
+Policy: {extra_json}
+"""
+
+answer = answer_from_context(
+    query="What are key warnings?",
+    context_text=context.text,
+    model="gpt-4.1-mini",
+    prompt_template=answer_template,
+    prompt_extra={"style": "bullet", "max_points": 5},
+    return_prompt=True,
+)
+print(answer.answer)`,
+        table: {
+          headers: ["Variable", "Type", "Description"],
+          rows: [
+            ["prompt_template", "str | callable | None", "Custom answer template"],
+            ["prompt_extra", "dict | None", "Extra answer policy payload"],
+            ["return_prompt", "bool", "Return final rendered answer prompt"]
+          ]
+        }
+      },
+      {
+        title: "Custom prompts in one-call run_reasoning_rag",
+        body:
+          "Set separate templates for tree and answer stages in one call.",
+        language: "python",
+        code: `from navexa import run_reasoning_rag
 
 rag = run_reasoning_rag(
     query="What are key warnings?",
     tree_or_source=tree,
-    llm_callable=my_llm,
-    model="external-model-name",
+    tree_prompt_template=custom_tree_prompt,
+    answer_prompt_template=answer_template,
+    tree_prompt_extra={"max_nodes": 3},
+    answer_prompt_extra={"style": "short"},
+    return_prompt=True,
 )
-print(rag.answer.answer)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["llm_callable", "callable", "Custom function signature `(prompt, model, stage)`"],
-            ["model", "str | None", "Optional model label passed to your callable"],
-            ["stage", "str", "Provided by Navexa: `tree_search` or `answer_generation`"]
-          ]
-        }
-      },
-      {
-        title: "Output expectation for custom tree_search stage",
-        body: "Return this JSON shape so Navexa can parse selected node ids correctly.",
-        language: "json",
-        code: `{
-  "thinking": "Why these nodes were chosen",
-  "node_list": ["0003", "0010", "0012"]
-}`
+print(rag.reasoning.used_prompt)
+print(rag.answer.used_prompt)`
       }
     ],
     whyThisMatters: [
-      "Lets you keep Navexa workflow while using your own LLM stack.",
-      "Useful for strict enterprise prompting and governance."
+      "Prompt customization helps align outputs to your domain and review policy.",
+      "You can tune behavior without changing Navexa internals."
     ],
     commonMistakes: [
       {
-        mistake: "Returning non-JSON for tree_search stage",
-        fix: "Always return JSON with `thinking` and `node_list`."
+        mistake: "Forgetting required placeholders",
+        fix: "Include `{query}` + `{tree_json}` in tree prompt and `{query}` + `{context}` in answer prompt."
       }
     ],
     tryIt: [
-      "Start by overriding only tree prompt.",
-      "Then switch to full `llm_callable` integration."
+      "Run once with default prompts, then with your custom templates.",
+      "Compare `used_prompt` and node selection quality."
+    ],
+    nextSteps: [
+      {
+        title: "Custom LLM define",
+        body: "Now plug your own external adapter with `llm_callable`.",
+        to: "/docs/reasoning-custom-llm"
+      }
+    ]
+  }),
+  withCoreToc({
+    id: "reasoning-custom-llm",
+    navParentId: "reasoning",
+    category: "Core concepts",
+    title: "Custom LLM define",
+    description:
+      "Use your own model/provider by passing `llm_callable` as a `BaseExternalLLM` adapter (adapter-only).",
+    whatYouBuild: [
+      "A provider-agnostic reasoning + answer workflow using your own backend.",
+      "A predictable interface for both `tree_search` and `answer_generation` stages."
+    ],
+    prerequisites: ["Custom provider endpoint or SDK", "Basic reasoning flow already tested"],
+    steps: [
+      {
+        title: "Internal vs external LLM",
+        body:
+          "Navexa reasoning APIs (`reason_over_tree`, `answer_from_context`, `run_reasoning_rag`) support two paths: internal provider client or an external adapter.",
+        bullets: [
+          "Internal LLM client: used when `llm_callable` is not provided.",
+          "External adapter: used when you pass `llm_callable=...`.",
+          "`llm_callable` must be an instance of `BaseExternalLLM` (adapter-only)."
+        ]
+      },
+      {
+        title: "Required interface",
+        body:
+          "Use `BaseExternalLLM` and implement `invoke(prompt=..., model=..., stage=...)`.",
+        bullets: [
+          "Stage values passed by Navexa: `tree_search` and `answer_generation`.",
+          "Allowed return types from `invoke(...)`: `str`, `dict`, or `list`.",
+          "For `tree_search`, return JSON with `thinking` and `node_list`."
+        ],
+        language: "json",
+        code: `{
+  "thinking": "short reasoning",
+  "node_list": ["0001", "0003"]
+}`
+      },
+      {
+        title: "Stage values (what Navexa passes)",
+        body: "Navexa passes a `stage` string so your adapter can route behavior.",
+        language: "json",
+        code: `{
+  "tree_search": "Choose node IDs relevant to query",
+  "answer_generation": "Generate final grounded answer"
+}`
+      },
+      {
+        title: "Allowed return types",
+        body:
+          "Your adapter can return `str`, `dict`, or `list`. Navexa normalizes to a string (dict/list are serialized to JSON).",
+        language: "json",
+        code: `{
+  "allowed_return_types": ["str", "dict", "list"],
+  "tree_search_recommended_shape": {
+    "thinking": "short reasoning",
+    "node_list": ["0001", "0003"]
+  }
+}`
+      },
+      {
+        title: "Azure adapter example",
+        body:
+          "Azure OpenAI often requires using your deployment name as `model`. This adapter also parses JSON for `tree_search` reliably.",
+        language: "python",
+        code: `import os
+import json
+import re
+from openai import OpenAI
+from navexa import BaseExternalLLM
+
+class AzureOpenAILLM(BaseExternalLLM):
+    def __init__(self, *, deployment_name=None, api_key=None, base_url=None, timeout=60.0):
+        super().__init__(
+            provider="azure",
+            default_model=deployment_name or os.getenv("AZURE_DEPLOYMENT_NAME"),
+        )
+        api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY")
+        base_url = base_url or os.getenv("AZURE_OPENAI_BASE_URL")
+        if not api_key or not base_url:
+            raise ValueError("Set AZURE_OPENAI_API_KEY and AZURE_OPENAI_BASE_URL.")
+        if "openai.azure.com" in base_url and "/openai/" not in base_url:
+            base_url = base_url.rstrip("/") + "/openai/v1"
+        self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+
+    def invoke(self, *, prompt: str, model: str, stage: str):
+        resp = self.client.chat.completions.create(
+            model=model,  # Azure deployment name
+            temperature=0,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = (resp.choices[0].message.content or "").strip()
+        if stage == "tree_search":
+            try:
+                return json.loads(text)
+            except Exception:
+                m = re.search(r"\\{[\\s\\S]*\\}", text)
+                if m:
+                    try:
+                        return json.loads(m.group(0))
+                    except Exception:
+                        pass
+                return {"thinking": "", "node_list": []}
+        return text`,
+        bullets: [
+          "Required env: `AZURE_OPENAI_API_KEY`",
+          "Required env: `AZURE_OPENAI_BASE_URL` (example: `https://<resource>.openai.azure.com/openai/v1`)",
+          "Required env: `AZURE_DEPLOYMENT_NAME`"
+        ]
+      },
+      {
+        title: "One-call usage",
+        body:
+          "Use `run_reasoning_rag(...)` to do: tree search -> context extraction -> answer generation.",
+        language: "python",
+        code: `from navexa import run_reasoning_rag
+
+llm = AzureOpenAILLM()
+
+rag = run_reasoning_rag(
+    query="What are key warnings?",
+    tree_or_source=tree,
+    llm_callable=llm,
+    model=None,  # uses adapter default_model
+)
+print(rag.answer.answer)`
+      },
+      {
+        title: "Step-by-step usage (different adapters per stage)",
+        body:
+          "If you want different deployment names/providers for node selection vs final answer, call stages manually.",
+        language: "python",
+        code: `from navexa import reason_over_tree, extract_selected_context, answer_from_context
+
+search_llm = AzureOpenAILLM(deployment_name="search-deploy")
+answer_llm = AzureOpenAILLM(deployment_name="answer-deploy")
+
+reasoning = reason_over_tree(
+    query="What are key warnings?",
+    tree=tree,
+    llm_callable=search_llm,
+)
+
+context = extract_selected_context(
+    tree=tree,
+    node_list=reasoning.node_list,
+    text_mode="inclusive",
+    dedupe_ancestor=True,
+)
+
+answer = answer_from_context(
+    query="What are key warnings?",
+    context_text=context.text,
+    llm_callable=answer_llm,
+)
+print(answer.answer)`
+      },
+      {
+        title: "Provider router adapter (OpenAI/Azure/Claude/Gemini)",
+        body:
+          "If you want one adapter that can call multiple providers, use a router and keep credentials in env vars.",
+        language: "python",
+        code: `import os
+from navexa import BaseExternalLLM
+
+class RouterLLM(BaseExternalLLM):
+    def __init__(self, provider: str, default_model: str | None = None):
+        super().__init__(provider=provider, default_model=default_model)
+
+    def invoke(self, *, prompt: str, model: str, stage: str):
+        if self.provider in {"openai", "azure"}:
+            from openai import OpenAI
+            kwargs = {"api_key": os.getenv("OPENAI_API_KEY")}
+            if self.provider == "azure":
+                kwargs = {
+                    "api_key": os.getenv("AZURE_OPENAI_API_KEY"),
+                    "base_url": os.getenv("AZURE_OPENAI_BASE_URL"),
+                }
+            client = OpenAI(**kwargs)
+            resp = client.chat.completions.create(
+                model=model,
+                temperature=0,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return resp.choices[0].message.content or ""
+
+        if self.provider == "claude":
+            import anthropic
+            client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            resp = client.messages.create(
+                model=model,
+                max_tokens=1200,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return "".join(
+                block.text for block in resp.content
+                if getattr(block, "type", "") == "text"
+            )
+
+        if self.provider == "gemini":
+            from google import genai
+            client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+            resp = client.models.generate_content(model=model, contents=prompt)
+            return getattr(resp, "text", "") or ""
+
+        raise ValueError(f"Unsupported provider: {self.provider}")`
+      },
+      {
+        title: "Inspect prompts while debugging external LLM",
+        body:
+          "Set `return_prompt=True` to inspect exactly what Navexa sent to your adapter.",
+        language: "python",
+        code: `from navexa import reason_over_tree, run_reasoning_rag
+
+llm = AzureOpenAILLM()
+
+reasoning = reason_over_tree(
+    query="What are key warnings?",
+    tree=tree,
+    llm_callable=llm,
+    return_prompt=True,
+)
+print(reasoning.used_prompt)
+
+rag = run_reasoning_rag(
+    query="What are key warnings?",
+    tree_or_source=tree,
+    llm_callable=llm,
+    return_prompt=True,
+)
+print(rag.reasoning.used_prompt)
+print(rag.answer.used_prompt)`
+      },
+      {
+        title: "Migration note",
+        body:
+          "Function-style `llm_callable` is no longer supported. Use `BaseExternalLLM` for all external integrations.",
+        bullets: [
+          "If you pass a function, Navexa will raise a `TypeError`.",
+          "Create an adapter class and implement `invoke(...)`."
+        ]
+      },
+      {
+        title: "Practical notes",
+        body: "Small rules of thumb that prevent confusing failures in production.",
+        bullets: [
+          "If `llm_callable` is provided, Navexa uses it and does not call the internal provider client for reasoning steps.",
+          "Keep `temperature=0` in your backend calls for stable node selection behavior.",
+          "Never hardcode secrets in source files; use environment variables."
+        ]
+      }
+    ],
+    whyThisMatters: [
+      "You can integrate Navexa with any internal or third-party LLM stack.",
+      "Separation by `stage` lets you use different logic per step."
+    ],
+    commonMistakes: [
+      {
+        mistake: "Returning plain text in tree_search stage",
+        fix: "Return valid JSON with `thinking` and `node_list` for tree selection."
+      },
+      {
+        mistake: "Passing a function as llm_callable",
+        fix: "Use a `BaseExternalLLM` adapter instance (adapter-only)."
+      }
+    ],
+    tryIt: [
+      "Start with the `AzureOpenAILLM` adapter or a small stub adapter that returns empty node lists.",
+      "Keep `temperature=0` while validating node selection behavior."
     ],
     nextSteps: [
       {
         title: "CLI commands",
-        body: "Operationalize your flow in scripts/CI.",
+        body: "Operationalize your flow in scripts and CI.",
         to: "/docs/cli"
       }
     ]
@@ -2017,14 +2331,14 @@ print(rag.answer.answer)`,
       },
       {
         title: "Transcript run",
-        body: "Use `output-format text` for transcript-focused parsing.",
+        body:
+          "Transcript CLI run (LLM-required). `--output-format` is accepted for API consistency but does not currently change transcript parsing.",
         language: "bash",
         code: `navexa-index \n\
   --pdf /absolute/path/transcript.pdf \n\
   --out-dir /absolute/path/transcript_out \n\
   --mode llm \n\
   --document-type transcript \n\
-  --output-format text \n\
   --verbose medium`
       },
       {
@@ -2132,7 +2446,7 @@ navexa-index --help`
           rows: [
             ["index_structured_document_tree", "Clear headings / TOC", "optional"],
             ["index_semi_structured_document_tree", "Messy headings / order", "required"],
-            ["index_unstructured_document_tree", "Weak or missing headings", "required"],
+            ["index_unstructured_document_tree", "Weak or missing headings", "optional"],
             ["index_transcript_document_tree", "Interviews / calls", "required"]
           ]
         }
@@ -2339,19 +2653,20 @@ python -c "import docling, openai, tiktoken; print('deps ok')"`
         body: "Zero cost or empty summaries usually means no LLM call path was used.",
         language: "bash",
         code: `echo $NAVEXA_MODE
-echo $OPENAI_MODEL
+echo $OPENAI_MODEL_NAME
+echo $AZURE_DEPLOYMENT_NAME
 echo $NAVEXA_IF_ADD_NODE_SUMMARY`
       },
       {
         title: "Know when LLM is required",
         body:
-          "Three indexing flows require an LLM by design. If credentials are missing, Navexa fails fast so you don't get misleading output.",
+          "Transcript is strictly LLM-required. Semi-structured wrapper also enforces LLM mode. Unstructured can run with or without LLM.",
         table: {
           headers: ["Document type", "LLM required?", "What happens if key/model is missing"],
           rows: [
             ["structured", "optional", "Falls back to no-LLM when needed"],
-            ["unstructured", "required", "Raises RuntimeError (fail-fast)"],
-            ["semi_structured", "required", "Raises RuntimeError (fail-fast)"],
+            ["unstructured", "optional", "Runs no-LLM unless mode='llm' is forced"],
+            ["semi_structured", "required (wrapper behavior)", "Raises RuntimeError in wrapper if model/key missing"],
             ["transcript", "required", "Raises RuntimeError (fail-fast)"]
           ]
         }
@@ -2415,7 +2730,7 @@ navexa-index --help`
           "Acknowledgment: PageIndex influenced the general workflow pattern (outline/tree-first indexing philosophy).",
           "Independent implementation: Navexa does not copy the whole library; it implements its own modules, API surface, and runtime behavior.",
           "Navexa-specific logic: Docling-based parsing, markdown-first tree construction, manual/synthetic TOC handling, LLM-assisted correction, and canonical API-like JSON output.",
-          "Customization: you can use one configured provider for all steps, or pass custom prompts and an external `llm_callable` at reasoning/answer stages.",
+          "Customization: you can use one configured provider for all steps, or pass custom prompts and an external adapter via `llm_callable` (BaseExternalLLM) at reasoning/answer stages.",
           "Open-source intent: Navexa is fully open and extensible, so teams can adapt it to their own pipelines.",
           "Attribution principle: using an upstream idea is normal in software ecosystems (similar to how many projects build on foundational libraries), while still keeping clear credit and independent implementation."
         ],
@@ -2426,7 +2741,7 @@ navexa-index --help`
             ["Document parsing", "General PDF indexing pattern", "Docling-driven parsing + Navexa segmentation logic"],
             ["TOC handling", "TOC detect/create/verify concept", "Navexa flow with manual/synthetic TOC + LLM correction paths"],
             ["Output format", "Node-oriented tree output concept", "Navexa canonical JSON schema + validation report + optional compat export"],
-            ["LLM integration", "LLM-assisted indexing idea", "Provider-configurable pipeline + custom prompt + external callable hooks"]
+            ["LLM integration", "LLM-assisted indexing idea", "Provider-configurable pipeline + custom prompt + external adapter hooks"]
           ]
         }
       }

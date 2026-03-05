@@ -36,6 +36,14 @@ export default function Topbar({ onOpenSidebar, onOpenSearch }) {
           PyPI ↗
         </a>
         <a
+          className="pypi-btn"
+          href="https://myrakesh.web.app/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Portfolio ↗
+        </a>
+        <a
           className="dashboard-btn"
           href="https://github.com/deBUGger404/navexa"
           target="_blank"

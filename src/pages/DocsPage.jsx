@@ -1,5 +1,5 @@
 import { AlertTriangle, ArrowRight, CheckCircle2, GraduationCap, Lightbulb } from "../lib/icons";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import BottomPager from "../components/BottomPager";
 import CodeBlock from "../components/CodeBlock";
@@ -32,6 +32,53 @@ function OverviewHero({ section }) {
   );
 }
 
+function LazyImageLink({ to, src, label, className, eager = false }) {
+  const hostRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(Boolean(eager));
+
+  useEffect(() => {
+    if (shouldLoad || eager) return;
+    const host = hostRef.current;
+    if (!host) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "220px 0px" }
+    );
+
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [shouldLoad, eager]);
+
+  return (
+    <Link
+      ref={hostRef}
+      className={`${className} ${loaded ? "is-loaded" : "is-loading"}`}
+      to={to}
+      aria-label={label}
+    >
+      <span className="lazy-image-placeholder" aria-hidden="true" />
+      <img
+        className="lazy-image-media"
+        src={shouldLoad ? src : undefined}
+        alt=""
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={eager ? "high" : "low"}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+      />
+    </Link>
+  );
+}
+
 function OverviewModels({ section }) {
   if (!Array.isArray(section.products) || section.products.length === 0) return null;
 
@@ -43,16 +90,15 @@ function OverviewModels({ section }) {
       </div>
 
       <div className="overview-model-grid">
-        {section.products.map((product) => (
+        {section.products.map((product, index) => (
           <article key={product.title} className="overview-model-item">
-            <Link
+            <LazyImageLink
               className="overview-model-visual"
               to={product.to}
-              style={{ backgroundImage: `url(${product.image})` }}
-              aria-label={product.title}
-            >
-              {/* <div className="overview-model-overlay" /> */}
-            </Link>
+              src={product.image}
+              label={product.title}
+              eager={index === 0}
+            />
             <h3>{product.title}</h3>
             <p>{product.description}</p>
           </article>
@@ -142,11 +188,11 @@ function ArticleDatasets({ items }) {
       <div className="article-dataset-grid">
         {items.map((item) => (
           <article key={item.title} className="article-dataset-card">
-            <Link
+            <LazyImageLink
               className="article-dataset-visual"
               to={item.to}
-              style={{ backgroundImage: `url(${item.image})` }}
-              aria-label={item.title}
+              src={item.image}
+              label={item.title}
             />
             <h3>{item.title}</h3>
             <p>{item.description}</p>
