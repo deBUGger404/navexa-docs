@@ -29,7 +29,7 @@ export default function Topbar({ onOpenSidebar, onOpenSearch }) {
         </button>
         <a
           className="pypi-btn"
-          href="https://pypi.org/project/navexa/0.1.1/"
+          href="https://pypi.org/project/navexa"
           target="_blank"
           rel="noreferrer"
         >
