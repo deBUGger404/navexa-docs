@@ -33,6 +33,14 @@ export default function Topbar({ onOpenSidebar, onOpenSearch }) {
           <span className="kbd-hint">Ctrl K/ ⌘ K</span>
         </button>
         <a
+          className="pypi-btn topbar-link"
+          href="https://myrakesh.web.app/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Portfolio ↗
+        </a>
+        <a
           className="pypi-btn topbar-link topbar-link--hide-phone"
           href="https://pypi.org/project/navexa/"
           target="_blank"
@@ -41,15 +49,7 @@ export default function Topbar({ onOpenSidebar, onOpenSearch }) {
           PyPI ↗
         </a>
         <a
-          className="pypi-btn topbar-link topbar-link--hide-tablet"
-          href="https://myrakesh.web.app/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Portfolio ↗
-        </a>
-        <a
-          className="dashboard-btn topbar-link"
+          className="dashboard-btn topbar-link topbar-link--hide-compact"
           href="https://github.com/deBUGger404/navexa"
           target="_blank"
           rel="noreferrer"

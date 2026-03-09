@@ -1879,10 +1879,6 @@ a {
     gap: 0;
   }
 
-  .pypi-btn {
-    display: none;
-  }
-
   .topbar-brand {
     max-width: min(28vw, 170px);
   }
@@ -1939,6 +1935,10 @@ a {
     padding: 6px 10px;
     font-size: 12px;
     white-space: nowrap;
+  }
+
+  .topbar-link--hide-compact {
+    display: none;
   }
 
   .layout {
