@@ -1,10 +1,17 @@
-import { AlertTriangle, ArrowRight, CheckCircle2, GraduationCap, Lightbulb } from "../lib/icons";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  GraduationCap,
+  Lightbulb,
+  Rocket
+} from "../lib/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import BottomPager from "../components/BottomPager";
 import CodeBlock from "../components/CodeBlock";
 import DocTable from "../components/DocTable";
-import { getSectionById, getPrevNext } from "../content/navexaDocs";
+import { getFirstChildSection, getSectionById, getPrevNext } from "../content/navexaDocs";
 import useBottomSentinel from "../hooks/useBottomSentinel";
 
 function OverviewHero({ section }) {
@@ -15,11 +22,10 @@ function OverviewHero({ section }) {
       <div className="overview-hero-copy">
         <h2>Developer quickstart</h2>
         <p>
-          Make your first index in minutes. Learn the core workflow before moving into
-          reasoning and production integration.
+          Make your first index in minutes. Learn the core workflow before moving into reasoning and production integration.
         </p>
-        <Link className="overview-hero-cta" to="/docs/install">
-          Get started
+        <Link className="overview-hero-cta" to="/docs/quickstart">
+          Get Started
         </Link>
       </div>
 
@@ -85,8 +91,7 @@ function OverviewModels({ section }) {
   return (
     <section id="products" className="overview-models">
       <div className="overview-models-head">
-        <h2>Capabilities</h2>
-        {/* <span>View all</span> */}
+        <h2>{section.productsTitle || "Capabilities"}</h2>
       </div>
 
       <div className="overview-model-grid">
@@ -113,6 +118,7 @@ function OverviewPage({ section }) {
     <>
       <header className="doc-header doc-header--overview">
         <h1>{section.title}</h1>
+        <p>{section.description}</p>
       </header>
 
       <OverviewHero section={section} />
@@ -132,32 +138,113 @@ function ArticleList({ items }) {
   );
 }
 
-function ArticleSteps({ steps }) {
-  if (!Array.isArray(steps) || steps.length === 0) return null;
+function ArticleDefinitionGroups({ groups }) {
+  if (!Array.isArray(groups) || groups.length === 0) return null;
 
   return (
-    <div className="article-steps">
-      {steps.map((step, index) => (
-        <section key={`${step.title}-${index}`} className="article-step">
-          <h3>
-            <span>{index + 1}.</span>
-            {step.title}
-          </h3>
-          <p>{step.body}</p>
-          {Array.isArray(step.bullets) && step.bullets.length ? (
-            <ul className="article-step-bullets">
-              {step.bullets.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+    <div className="article-definition-groups">
+      {groups.map((group, index) => (
+        <section key={`${group.lead || group.title || "definitions"}-${index}`} className="article-definition-group">
+          {group.title ? <h4>{group.title}</h4> : null}
+          {group.lead || group.badge || group.trail ? (
+            <h4>
+              {group.lead ? <span>{group.lead} </span> : null}
+              {group.badge ? <code className="article-inline-chip">{group.badge}</code> : null}
+              {group.trail ? <span> {group.trail}</span> : null}
+            </h4>
           ) : null}
-          {step.code ? (
-            <CodeBlock title={step.title} language={step.language || "text"} code={step.code} />
-          ) : null}
-          {step.table ? <DocTable table={step.table} /> : null}
+          <ul className="article-definition-list">
+            {group.items?.map((item) => (
+              <li key={`${item.label}-${item.description}`}>
+                <code className="article-inline-chip">{item.label}</code>
+                <span>{item.description}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       ))}
     </div>
+  );
+}
+
+function ArticleMoreDetails({ items }) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  return (
+    <div className="article-more-list">
+      {items.map((item, index) => (
+        <details key={`${item.title}-${index}`} className="article-more-item">
+          <summary>{item.title}</summary>
+          <div className="article-more-body">
+            {item.body ? <p>{item.body}</p> : null}
+            <ArticleDefinitionGroups groups={item.definitionGroups} />
+            {item.code ? (
+              <CodeBlock
+                title={item.codeTitle || item.title}
+                language={item.language || "text"}
+                code={item.code}
+              />
+            ) : null}
+            {item.table ? <DocTable table={item.table} /> : null}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function ArticleListSection({ id, title, items, icon }) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  return (
+    <section id={id} className="article-section">
+      <h2>
+        {icon}
+        {title}
+      </h2>
+      <ArticleList items={items} />
+    </section>
+  );
+}
+
+function ArticleBlockGroup({ id, title, blocks, numbered = false, icon = null }) {
+  if (!Array.isArray(blocks) || blocks.length === 0) return null;
+
+  return (
+    <section id={id} className="article-section">
+      <h2>
+        {icon}
+        {title}
+      </h2>
+      <div className="article-steps">
+        {blocks.map((block, index) => (
+          <section key={`${title}-${block.title}-${index}`} className="article-step">
+            <h3>
+              {numbered ? <span>{index + 1}.</span> : null}
+              {block.title}
+            </h3>
+            {block.body ? <p>{block.body}</p> : null}
+            {Array.isArray(block.bullets) && block.bullets.length ? (
+              <ul className="article-step-bullets">
+                {block.bullets.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            ) : null}
+            <ArticleDefinitionGroups groups={block.definitionGroups} />
+            <ArticleMoreDetails items={block.moreDetails} />
+            {block.code ? (
+              <CodeBlock
+                title={block.codeTitle || block.title}
+                language={block.language || "text"}
+                code={block.code}
+              />
+            ) : null}
+            {block.table ? <DocTable table={block.table} /> : null}
+          </section>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -183,8 +270,8 @@ function ArticleDatasets({ items }) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
   return (
-    <section className="article-section">
-      <h2>Data type examples</h2>
+    <section id="data-type-examples" className="article-section">
+      <h2>Document type examples</h2>
       <div className="article-dataset-grid">
         {items.map((item) => (
           <article key={item.title} className="article-dataset-card">
@@ -203,22 +290,53 @@ function ArticleDatasets({ items }) {
   );
 }
 
-function NextSteps({ items }) {
+function VariablesSection({ table }) {
+  if (!table?.headers?.length || !table?.rows?.length) return null;
+
+  return (
+    <section id="variables" className="article-section">
+      <h2>Variables you usually change</h2>
+      <DocTable table={table} />
+    </section>
+  );
+}
+
+function CommonMistakesSection({ items }) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
   return (
-    <section id="next-steps" className="article-section">
-      <h2>Next steps</h2>
+    <section id="common-mistakes" className="article-section">
+      <h2>Common mistakes</h2>
+      <ArticleMistakes items={items} />
+    </section>
+  );
+}
+
+function InternalLinkCards({ id, title, items }) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  return (
+    <section id={id} className="article-section">
+      <h2>{title}</h2>
       <div className="article-next-links">
         {items.map((item) => (
-          <Link key={`${item.to}-${item.title}`} to={item.to}>
-            {item.title}
-            <ArrowRight size={14} aria-hidden="true" />
+          <Link key={`${item.to}-${item.title}`} to={item.to} className="article-next-link-card">
+            <span className="article-next-link-head">
+              <strong>{item.title}</strong>
+              <span className="article-next-link-icon" aria-hidden="true">
+                <ArrowRight size={14} />
+              </span>
+            </span>
+            {item.body ? <span className="article-next-link-text">{item.body}</span> : null}
           </Link>
         ))}
       </div>
     </section>
   );
+}
+
+function NextSteps({ items }) {
+  return <InternalLinkCards id="next-steps" title="Next steps" items={items} />;
 }
 
 function ArticlePage({ section, fallbackNext }) {
@@ -229,50 +347,66 @@ function ArticlePage({ section, fallbackNext }) {
         <p>{section.description}</p>
       </header>
 
-      <section id="what-you-build" className="article-section">
-        <h2>
-          <GraduationCap size={17} aria-hidden="true" />
-          What you'll build
-        </h2>
-        <ArticleList items={section.whatYouBuild} />
-      </section>
+      <ArticleListSection
+        id="what-this-page-is-for"
+        title="What this page is for"
+        items={section.whatThisPageIsFor}
+        icon={<GraduationCap size={17} aria-hidden="true" />}
+      />
 
-      <section id="prerequisites" className="article-section">
-        <h2>
-          <CheckCircle2 size={17} aria-hidden="true" />
-          Prerequisites
-        </h2>
-        <ArticleList items={section.prerequisites} />
-      </section>
+      <ArticleListSection
+        id="when-to-use"
+        title="When to use it"
+        items={section.whenToUse}
+        icon={<CheckCircle2 size={17} aria-hidden="true" />}
+      />
+
+      <ArticleListSection
+        id="before-you-start"
+        title="Before you start"
+        items={section.prerequisites}
+        icon={<CheckCircle2 size={17} aria-hidden="true" />}
+      />
 
       <ArticleDatasets items={section.datasets} />
 
-      <section id="steps" className="article-section">
-        <h2>
-          <Lightbulb size={17} aria-hidden="true" />
-          Step-by-step
-        </h2>
-        <ArticleSteps steps={section.steps || []} />
-      </section>
+      <ArticleBlockGroup
+        id="minimum-working-flow"
+        title={section.stepsTitle || "Minimum working flow"}
+        blocks={section.steps}
+        numbered
+        icon={<Lightbulb size={17} aria-hidden="true" />}
+      />
 
-      <section id="why-this-matters" className="article-section">
-        <h2>Why this matters</h2>
-        <ArticleList items={section.whyThisMatters} />
-      </section>
+      <InternalLinkCards id="detail-pages" title="Read more" items={section.detailPages} />
 
-      <section id="common-mistakes" className="article-section">
-        <h2>Common mistakes</h2>
-        <ArticleMistakes items={section.commonMistakes} />
-      </section>
+      <VariablesSection table={section.variablesTable} />
 
-      <section id="try-it" className="article-section">
-        <h2>Try it</h2>
-        <ol className="article-try-list">
-          {(section.tryIt || []).map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ol>
-      </section>
+      <ArticleBlockGroup id="sample-output" title="Sample output" blocks={section.sampleOutput} />
+
+      <CommonMistakesSection items={section.commonMistakes} />
+
+      <ArticleBlockGroup id="advanced-options" title="Advanced options" blocks={section.advancedOptions} />
+
+      <ArticleBlockGroup
+        id="deprecated-notes"
+        title="Deprecated notes"
+        blocks={section.deprecatedNotes}
+      />
+
+      {section.tryIt?.length ? (
+        <section id="try-it" className="article-section">
+          <h2>
+            <Rocket size={17} aria-hidden="true" />
+            Try it
+          </h2>
+          <ol className="article-try-list">
+            {section.tryIt.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
 
       {section.links?.length ? (
         <section className="article-section">
@@ -300,6 +434,14 @@ export default function DocsPage() {
   const nearBottom = useBottomSentinel(sentinelRef);
 
   if (!section) {
+    return <Navigate to="/docs/overview" replace />;
+  }
+
+  if (section.groupOnly) {
+    const firstChild = getFirstChildSection(section.id);
+    if (firstChild) {
+      return <Navigate to={`/docs/${firstChild.id}`} replace />;
+    }
     return <Navigate to="/docs/overview" replace />;
   }
 

@@ -19,24 +19,29 @@ export default function Topbar({ onOpenSidebar, onOpenSearch }) {
       </div>
 
       <div className="topbar-actions">
-        <button type="button" className="topbar-search-btn" onClick={onOpenSearch}>
+        <button
+          type="button"
+          className="topbar-search-btn"
+          onClick={onOpenSearch}
+          aria-label="Open search"
+        >
           <span className="search-left">
             <Search size={15} aria-hidden="true" />
-            <span>Search</span>
+            <span className="topbar-search-label">Search</span>
           </span>
 
           <span className="kbd-hint">Ctrl K/ ⌘ K</span>
         </button>
         <a
-          className="pypi-btn"
-          href="https://pypi.org/project/navexa"
+          className="pypi-btn topbar-link topbar-link--hide-phone"
+          href="https://pypi.org/project/navexa/"
           target="_blank"
           rel="noreferrer"
         >
           PyPI ↗
         </a>
         <a
-          className="pypi-btn"
+          className="pypi-btn topbar-link topbar-link--hide-tablet"
           href="https://myrakesh.web.app/"
           target="_blank"
           rel="noreferrer"
@@ -44,7 +49,7 @@ export default function Topbar({ onOpenSidebar, onOpenSearch }) {
           Portfolio ↗
         </a>
         <a
-          className="dashboard-btn"
+          className="dashboard-btn topbar-link"
           href="https://github.com/deBUGger404/navexa"
           target="_blank"
           rel="noreferrer"

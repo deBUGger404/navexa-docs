@@ -13,7 +13,7 @@ function SidebarContent({ sections, onOpenSearch, onNavigate }) {
       <button className="sidebar-search-trigger" type="button" onClick={onOpenSearch}>
         <Search size={15} aria-hidden="true" />
         Search docs
-        <span>⌘K</span>
+        <span>⌘ K</span>
       </button>
 
       <nav className="sidebar-groups" aria-label="Documentation sections">
@@ -35,7 +35,7 @@ function SidebarContent({ sections, onOpenSearch, onNavigate }) {
                     const activeChild = children.some(
                       (child) => location.pathname === `/docs/${child.id}`
                     );
-                    const expanded = collapsed[section.id] ?? activeChild;
+                    const expanded = collapsed[section.id] ?? false;
 
                     if (!hasChildren) {
                       return (
@@ -55,37 +55,29 @@ function SidebarContent({ sections, onOpenSearch, onNavigate }) {
                         key={section.id}
                         className={`sidebar-parent ${activeChild ? "is-active-group" : ""}`}
                       >
-                        <div
+                        <button
+                          type="button"
                           className={`sidebar-parent-row ${
                             location.pathname === parentPath || activeChild ? "is-active" : ""
                           }`}
+                          aria-label={
+                            expanded
+                              ? `Collapse ${section.title} subsections`
+                              : `Expand ${section.title} subsections`
+                          }
+                          aria-expanded={expanded}
+                          onClick={() =>
+                            setCollapsed((prev) => ({
+                              ...prev,
+                              [section.id]: !expanded
+                            }))
+                          }
                         >
-                          <NavLink
-                            to={parentPath}
-                            className="sidebar-parent-link"
-                            onClick={onNavigate}
-                          >
-                            <span>{section.title}</span>
-                          </NavLink>
-                          <button
-                            type="button"
-                            className="sidebar-subtoggle"
-                            aria-label={
-                              expanded
-                                ? `Collapse ${section.title} subsections`
-                                : `Expand ${section.title} subsections`
-                            }
-                            aria-expanded={expanded}
-                            onClick={() =>
-                              setCollapsed((prev) => ({
-                                ...prev,
-                                [section.id]: !expanded
-                              }))
-                            }
-                          >
+                          <span className="sidebar-parent-label">{section.title}</span>
+                          <span className="sidebar-parent-chevron" aria-hidden="true">
                             {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                          </button>
-                        </div>
+                          </span>
+                        </button>
 
                         {expanded ? (
                           <div className="sidebar-subtree">

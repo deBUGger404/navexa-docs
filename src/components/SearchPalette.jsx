@@ -100,6 +100,7 @@ export default function SearchPalette({ open, onClose }) {
   if (!open) return null;
 
   let runningIndex = -1;
+  const resultCount = results.length;
 
   return (
     <div className="search-overlay" role="dialog" aria-modal="true" aria-label="Search documentation">
@@ -107,14 +108,24 @@ export default function SearchPalette({ open, onClose }) {
 
       <section className="search-panel">
         <header className="search-panel-head">
-          <h2>
-            <Sparkles size={16} aria-hidden="true" />
-            Search Navexa docs
-          </h2>
-          <button type="button" className="search-close-btn" onClick={onClose}>
-            <X size={15} aria-hidden="true" />
-            Close
-          </button>
+          <div className="search-panel-head-copy">
+            <h2>
+              <Sparkles size={16} aria-hidden="true" />
+              Search Navexa docs
+            </h2>
+            <p>Find pages, functions, workflow guides, and setup notes in one place.</p>
+          </div>
+
+          <div className="search-panel-head-actions">
+            <span className="search-head-kbd">
+              <kbd>Esc</kbd>
+              close
+            </span>
+            <button type="button" className="search-close-btn" onClick={onClose}>
+              <X size={15} aria-hidden="true" />
+              Close
+            </button>
+          </div>
         </header>
 
         <label className="search-input-wrap" htmlFor="docs-search-input">
@@ -126,15 +137,27 @@ export default function SearchPalette({ open, onClose }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search pages, topics, and APIs"
           />
+          <span className="search-input-hint">Use arrows + Enter</span>
         </label>
+
+        <div className="search-results-meta" aria-live="polite">
+          <span>{query ? `${resultCount} result${resultCount === 1 ? "" : "s"}` : "Suggested pages"}</span>
+          <span>Grouped by section</span>
+        </div>
 
         <div className="search-results" role="listbox" aria-label="Search results">
           {groupedResults.length === 0 ? (
-            <div className="search-empty">No results found.</div>
+            <div className="search-empty">
+              <strong>No results found</strong>
+              <p>Try a page title, function name, or topic such as `index`, `reasoning`, or `env`.</p>
+            </div>
           ) : (
             groupedResults.map(([category, items]) => (
               <div key={category} className="search-group">
-                <div className="search-group-title">{category}</div>
+                <div className="search-group-title">
+                  <span>{category}</span>
+                  <small>{items.length}</small>
+                </div>
                 <div className="search-group-list">
                   {items.map((item) => {
                     runningIndex += 1;

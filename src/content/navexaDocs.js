@@ -1,161 +1,314 @@
-const CORE_TOC = [
-  { id: "what-you-build", title: "What you'll build" },
-  { id: "prerequisites", title: "Prerequisites" },
-  { id: "steps", title: "Step-by-step" },
-  { id: "why-this-matters", title: "Why this matters" },
-  { id: "common-mistakes", title: "Common mistakes" },
-  { id: "try-it", title: "Try it" },
-  { id: "next-steps", title: "Next steps" }
-];
+const REPO_URL = "https://github.com/deBUGger404/navexa";
+const PYPI_URL = "https://pypi.org/project/navexa/";
+const DOCS_URL = "https://debugger404.github.io/navexa-docs/";
+const RELEASE_URL = `${REPO_URL}/blob/main/RELEASE.md`;
 
 const asset = (fileName) => `${import.meta.env.BASE_URL}${fileName}`;
 
-function withCoreToc(section, extra = []) {
-  return {
-    ...section,
-    toc: [...extra, ...CORE_TOC]
-  };
-}
+const table = (headers, rows, options = {}) => ({ headers, rows, ...options });
+const boolCell = (value, label = value ? "On" : "Off") => ({ kind: "bool", value, label });
+const codeCell = (text) => ({ kind: "code", text });
+const profileHeader = (text, caption, tone) => ({ kind: "profile_header", text, caption, tone });
 
-export const sections = [
-  withCoreToc(
-    {
-      id: "overview",
-      category: "Get started",
-      title: "Navexa Library Docs",
-      description:
-        "Build reliable PDF indexing and reasoning workflows with clear hierarchy, provenance, and grounded retrieval.",
-      heroCode: {
-        title: "First successful index",
-        language: "python",
-        code: `from navexa import index_structured_document_tree, save_document_tree
+const quickstartCode = `from navexa import index_structured_document_tree, save_document_tree
 
 result = index_structured_document_tree(
     pdf_path="/absolute/path/document.pdf",
     mode="no-llm",
-    verbosity="medium",
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
 )
 
 saved = save_document_tree(
-    index_result=result,
-    out_dir="/absolute/path/output",
+    result,
+    out_dir="/absolute/path/out",
     write_tree=True,
     write_validation=True,
 )
 
-print(saved.paths["tree_navexa"])`
-      },
-      products: [
+print(saved.paths["tree_navexa"])`;
+
+const openAiModelConfig = `model_config = {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "api_key": "...",
+    "base_url": None,
+    "pricing_model": None,
+}`;
+
+const azureModelConfig = `model_config = {
+    "provider": "azure",
+    "model": "my-gpt41mini-deployment",
+    "pricing_model": "gpt-4.1-mini",
+    "api_key": "...",
+    "base_url": "https://<resource>.openai.azure.com",
+}`;
+
+const parserConfigCode = `parser_config = {
+    "name": "docling",
+    "output_format": "markdown",
+    "options": {
+        "profile": "balanced",
+        "do_ocr": True,
+        "do_table_structure": True,
+    },
+}`;
+
+const cliParserConfigJson = `{
+  "name": "docling",
+  "output_format": "markdown",
+  "options": {
+    "profile": "balanced",
+    "do_ocr": true,
+    "do_table_structure": true
+  }
+}`;
+
+const treeSampleJson = `{
+  "doc_id": "document",
+  "doc_name": "document",
+  "pages": { "count": 8 },
+  "pipeline_version": "navexa-1.2.0",
+  "source": {
+    "pdf_path": "/absolute/path/document.pdf",
+    "sha256": "9f4d...",
+    "total_pages": 8
+  },
+  "cost": {
+    "pricing_model": "gpt-4.1-mini",
+    "calls": 3,
+    "input_tokens": 2851,
+    "output_tokens": 612,
+    "total_tokens": 3463,
+    "estimated_cost_usd": 0.002318
+  },
+  "pipeline": {
+    "document_type": "structured",
+    "requested_mode": "llm",
+    "effective_mode": "llm",
+    "llm_required": false,
+    "summary_enabled": true,
+    "model_config": {
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "pricing_model": "gpt-4.1-mini",
+      "api_key_configured": true,
+      "base_url_configured": false,
+      "source": "model_config"
+    },
+    "parser_config": {
+      "name": "docling",
+      "output_format": "markdown",
+      "options": {
+        "profile": "balanced",
+        "do_ocr": true,
+        "force_full_page_ocr": true,
+        "backend": "torch",
+        "do_table_structure": true,
+        "do_picture_description": false,
+        "enable_remote_services": false,
+        "image_mode": "placeholder",
+        "quiet": true
+      }
+    },
+    "warnings": []
+  },
+  "structure": [
+    {
+      "node_id": "0001",
+      "title": "Overview",
+      "summary": "Top-level summary",
+      "children": []
+    }
+  ]
+}`;
+
+const validationSampleJson = `{
+  "generated_at": "2026-03-09T00:00:00+00:00",
+  "pipeline_version": "navexa-1.2.0",
+  "metrics": {
+    "node_count": 18,
+    "empty_node_rate": 0.0,
+    "heading_anchor_match_rate": 1.0,
+    "overlap_violations": 0,
+    "duplicated_block_rate": 0.0,
+    "summary_coverage": 0.83
+  }
+}`;
+
+const searchTreeViewSample = `{
+  "doc_id": "document",
+  "structure": [
+    {
+      "node_id": "0001",
+      "title": "Overview",
+      "summary": "Top-level summary",
+      "children": [
         {
-          title: "Structured Indexing",
-          visualTitle: "index-tree",
-          description: "Build hierarchy-aware trees with clean section boundaries.",
-          image: asset("image1.png"),
-          to: "/docs/indexing-modes"
-        },
-        {
-          title: "Reasoning Retrieval",
-          visualTitle: "reasoning",
-          description: "Select the right nodes before generating grounded answers.",
-          image: asset("image2.png"),
-          to: "/docs/reasoning"
-        },
-        {
-          title: "Transcript Understanding",
-          visualTitle: "transcript",
-          description: "Group transcript segments into topics with strong traceability.",
-          image: asset("image3.png"),
-          to: "/docs/indexing-modes"
-        }
-      ],
-      whatYouBuild: [
-        "A repeatable indexing workflow that converts PDFs into `tree_navexa.json`.",
-        "A retrieval workflow that selects relevant nodes before answering.",
-        "A practical understanding of when to use each indexing mode."
-      ],
-      prerequisites: [
-        "Python 3.10+ environment",
-        "A sample PDF file",
-        "Optional LLM key for enhanced outline/summaries"
-      ],
-      steps: [
-        {
-          title: "Start with a deterministic index",
-          body: "Use `mode=\"no-llm\"` first. This validates parser and file paths before model costs."
-        },
-        {
-          title: "Inspect tree quality",
-          body: "Open `tree_navexa.json` and confirm top-level sections and child hierarchy look correct."
-        },
-        {
-          title: "Layer reasoning retrieval",
-          body: "Use tree search + extracted context to produce grounded answers."
-        }
-      ],
-      whyThisMatters: [
-        "Section-aware retrieval reduces random context stuffing.",
-        "Tree nodes preserve provenance, making answers auditable.",
-        "You can start cheap (no-LLM) and upgrade to LLM-assisted mode when needed."
-      ],
-      commonMistakes: [
-        {
-          mistake: "Starting with LLM mode before environment is stable",
-          fix: "Run a no-LLM smoke index first, then enable model/key."
-        },
-        {
-          mistake: "Using relative PDF paths in notebooks",
-          fix: "Use absolute paths for repeatable runs across terminals and notebooks."
-        }
-      ],
-      tryIt: [
-        "Index one PDF in `no-llm` mode.",
-        "Open the output tree and identify one parent-child branch.",
-        "Ask one question using reasoning retrieval and compare answer quality."
-      ],
-      nextSteps: [
-        {
-          title: "Install and verify",
-          body: "Set up a clean environment and confirm the CLI works.",
-          to: "/docs/install"
-        },
-        {
-          title: "Quickstart: index your first PDF",
-          body: "Run an end-to-end index and inspect the output tree.",
-          to: "/docs/quickstart"
-        }
-      ],
-      links: [
-        {
-          label: "Navexa package source",
-          href: "https://github.com/deBUGger404/navexa"
+          "node_id": "0001.0001",
+          "title": "Scope",
+          "summary": "Explains scope",
+          "children": []
         }
       ]
+    }
+  ]
+}`;
+
+const nodeIndexSample = `{
+  "0001.0001": {
+    "node_id": "0001.0001",
+    "title": "Scope",
+    "summary": "Explains scope",
+    "page_index": "2-3",
+    "parent_id": "0001",
+    "children": [],
+    "exclusive_text": "Section text...",
+    "full_text": "Section text..."
+  }
+}`;
+
+const reasoningResultSample = `{
+  "thinking": "The answer is likely in the setup and parser sections.",
+  "node_list": ["0001.0002", "0002.0001"],
+  "raw_response": "{...}",
+  "used_prompt": null,
+  "parsed_json": {
+    "thinking": "The answer is likely in the setup and parser sections.",
+    "node_list": ["0001.0002", "0002.0001"]
+  }
+}`;
+
+const contextBundleSample = `{
+  "node_list": ["0001.0002"],
+  "dropped_node_list": ["0001"],
+  "missing_node_list": [],
+  "text_mode": "inclusive",
+  "text": "Selected node text...",
+  "node_records": [
+    {
+      "node_id": "0001.0002",
+      "title": "Parser config",
+      "page_index": "4-5",
+      "text_length": 1842
+    }
+  ]
+}`;
+
+const ragResultSample = `{
+  "tree": {...},
+  "tree_view": {...},
+  "node_index": {...},
+  "reasoning": {...},
+  "context": {...},
+  "answer": {...},
+  "cost_before": {...},
+  "cost_after": {...},
+  "cost_delta": {
+    "calls": 2,
+    "input_tokens": 1940,
+    "output_tokens": 401,
+    "total_tokens": 2341,
+    "estimated_cost_usd": 0.001542
+  }
+}`;
+
+function createArticle(section) {
+  return {
+    ...section,
+    toc: buildArticleToc(section)
+  };
+}
+
+function buildArticleToc(section) {
+  const items = [];
+  if (section.whatThisPageIsFor?.length) items.push({ id: "what-this-page-is-for", title: "What this page is for" });
+  if (section.whenToUse?.length) items.push({ id: "when-to-use", title: "When to use it" });
+  if (section.prerequisites?.length) items.push({ id: "before-you-start", title: "Before you start" });
+  if (section.datasets?.length) items.push({ id: "data-type-examples", title: "Document type examples" });
+  if (section.steps?.length) items.push({ id: "minimum-working-flow", title: section.stepsTitle || "Minimum working flow" });
+  if (section.detailPages?.length) items.push({ id: "detail-pages", title: "Read more" });
+  if (section.variablesTable?.rows?.length) items.push({ id: "variables", title: "Variables you usually change" });
+  if (section.sampleOutput?.length) items.push({ id: "sample-output", title: "Sample output" });
+  if (section.commonMistakes?.length) items.push({ id: "common-mistakes", title: "Common mistakes" });
+  if (section.advancedOptions?.length) items.push({ id: "advanced-options", title: "Advanced options" });
+  if (section.deprecatedNotes?.length) items.push({ id: "deprecated-notes", title: "Deprecated notes" });
+  if (section.tryIt?.length) items.push({ id: "try-it", title: "Try it" });
+  if (section.nextSteps?.length) items.push({ id: "next-steps", title: "Next steps" });
+  return items;
+}
+
+function next(title, to, body = "") {
+  return { title, to, body };
+}
+
+const rawSections = [
+  {
+    id: "overview",
+    category: "Get started",
+    title: "Navexa Library Docs",
+    productsTitle: "Capabilities",
+    // description:
+    //   "Code-first documentation for Navexa. Start with the supported working path, then add parser control, reasoning, and compatibility only when you need them.",
+    heroCode: {
+      title: "First successful index",
+      language: "python",
+      code: quickstartCode
     },
-    [
-      { id: "hero-quickstart", title: "Developer quickstart" },
-      { id: "products", title: "Core capabilities" }
+    products: [
+      {
+        title: "Structured Indexing",
+        description: "Build hierarchy-aware trees with clean section boundaries.",
+        image: asset("image1.png"),
+        to: "/docs/data-structured"
+      },
+      {
+        title: "Reasoning Retrieval",
+        description: "Select the right nodes before generating grounded answers.",
+        image: asset("image2.png"),
+        to: "/docs/reasoning"
+      },
+      {
+        title: "Transcript Understanding",
+        description: "Group transcript segments into topics with strong traceability.",
+        image: asset("image3.png"),
+        to: "/docs/data-transcript"
+      }
+    ],
+    toc: [
+      { id: "hero-quickstart", title: "Current quickstart" },
+      { id: "products", title: "Capabilities" }
     ]
-  ),
-  withCoreToc({
+  },
+  createArticle({
     id: "install",
     category: "Get started",
     title: "Install and Verify",
     description:
-      "Install Navexa in a clean environment, verify the CLI, then run a tiny smoke index that is easy to debug.",
-    whatYouBuild: [
-      "A clean installation flow that you and your team can copy-paste.",
-      "A quick verification checklist that works in both terminal and notebooks."
+      "Set up one clean environment, confirm the package and CLI work, and create a simple baseline before you tune anything else.",
+    whatThisPageIsFor: [
+      "Get Navexa installed in one clean Python environment.",
+      "Verify the package import and the `navexa-index` command before reading the deeper guides."
+    ],
+    whenToUse: [
+      "You are starting on a new machine, notebook kernel, or virtual environment.",
+      "You are seeing `ModuleNotFoundError`, PATH issues, or a missing CLI command.",
+      "You want a clean baseline before parser or LLM setup."
     ],
     prerequisites: [
-      "Python 3.10+",
+      "Python 3.10 or newer",
       "Terminal access",
       "One sample PDF file",
-      "Write access to an output folder"
+      "Write access to an output directory"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Create a fresh environment",
-        body: "Start clean to avoid version conflicts between Docling, Transformers, and notebooks.",
+        title: "Create one clean environment and install Navexa",
+        body: "Keep the first setup simple so the CLI and the Python package both point to the same interpreter.",
         language: "bash",
         code: `python3 -m venv .venv
 source .venv/bin/activate
@@ -163,793 +316,864 @@ python -m pip install -U pip
 python -m pip install -U navexa`
       },
       {
-        title: "Choose an install option (when needed)",
-        body:
-          "If you are developing Navexa, use an editable install. If you're using notebooks, install the notebook extra to avoid the common progress-bar warning.",
-        language: "bash",
-        code: `# Most users (PyPI)
-python -m pip install -U navexa
-
-# Notebooks (removes common tqdm warning)
-python -m pip install -U "navexa[notebook]"
-
-# Development (editable install from a local clone)
-cd /path/to/navexa
-python -m pip install -e .
-
-# Install from Git (if hosted)
-python -m pip install git+https://github.com/deBUGger404/navexa.git`
-      },
-      {
-        title: "Section 1: Verify Python API (library)",
-        body:
-          "First confirm the Python package works in your current environment. This is your library-level health check.",
+        title: "Verify the import and the CLI",
+        body: "Confirm the package import and the CLI entrypoint from the same environment before indexing real files.",
         language: "bash",
         code: `python - <<'PY'
 import navexa
 print("import_ok")
-print("version:", getattr(navexa, "__version__", "unknown"))
+print(navexa.__file__)
 PY
 
-# Expected output
-# import_ok
-# version: 0.1.1`
-      },
-      {
-        title: "Section 2: Verify CLI, fix PATH if needed, then re-check",
-        body:
-          "Now test the terminal command. If it is not found, add PATH, reload shell, and check again.",
-        language: "bash",
-        code: `# 1) CLI test
 which navexa-index
-navexa-index --help
-
-# Example of failure output:
-# which navexa-index
-# (no output)
-# navexa-index --help
-# zsh: command not found: navexa-index
-
-# If you see "command not found", apply PATH fix:
-
-# macOS (zsh)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-
-# Linux (bash)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-
-# Windows PowerShell
-$UserBase = python -m site --user-base
-$ScriptsPath = "$UserBase\\Scripts"
-[Environment]::SetEnvironmentVariable("Path", "$env:Path;$ScriptsPath", "User")
-$env:Path = "$env:Path;$ScriptsPath"
-
-# Windows CMD
-for /f "delims=" %i in ('python -m site --user-base') do set "USERBASE=%i"
-set "PATH=%PATH%;%USERBASE%\\Scripts"
-
-# 2) Re-check after PATH fix
-which navexa-index
-where navexa-index
 navexa-index --help`
       },
       {
-        title: "Run smoke command",
-        body:
-          "Use `no-llm` + `structured` for the first run. It is deterministic and costs $0 in LLM usage.",
+        title: "Run one smoke command",
+        body: "Use one structured no-LLM run first. It isolates install, file-path, and output-directory issues from parser or LLM setup.",
         language: "bash",
-        code: `navexa-index \n\
-  --pdf /absolute/path/document.pdf \n\
-  --out-dir /absolute/path/out \n\
-  --mode no-llm \n\
-  --document-type structured \n\
-  --output-format markdown \n\
-  --verbose medium \n\
+        code: `navexa-index
+  --pdf /absolute/path/document.pdf
+  --out-dir /absolute/path/out
+  --document-type structured
+  --mode no-llm
   --with-validation`
       }
     ],
-    whyThisMatters: [
-      "A deterministic smoke run catches file and parser issues early.",
-      "It prevents expensive debugging in LLM mode."
+    detailPages: [
+      next(
+        "Quickstart: Index Your First PDF",
+        "/docs/quickstart",
+        "Run the first structured workflow, save the outputs, and inspect the main pipeline fields."
+      ),
+      next(
+        "parser_config (recommended)",
+        "/docs/parser-config",
+        "Learn the Docling profiles, option meanings, and the current grouped parser API."
+      ),
+      next(
+        "Environment and LLM Setup",
+        "/docs/env",
+        "Add provider credentials only after the baseline install and smoke run are stable."
+      )
     ],
     commonMistakes: [
       {
-        mistake: "Mixing environments (terminal uses one Python, notebook uses another)",
-        fix: "In your notebook, print `sys.executable` and make sure it matches your intended environment."
+        mistake: "Mixing notebook Python and terminal Python",
+        fix: "Print `navexa.__file__` and `sys.executable` inside the notebook and compare them to your terminal environment."
       },
       {
-        mistake: "Using a relative PDF path",
-        fix: "Use an absolute PDF path so your code works from any folder."
-      },
+        mistake: "Skipping the no-LLM smoke run",
+        fix: "Start with one structured no-LLM run so file path and parser problems are isolated before LLM setup."
+      }
+    ],
+    advancedOptions: [
       {
-        mistake: "Turning on LLM mode before credentials are set",
-        fix: "Do one no-LLM run first. Then set `OPENAI_API_KEY` or `AZURE_OPENAI_API_KEY` and rerun in LLM mode."
+        title: "More setup paths",
+        body: "Open these only when the standard PyPI install is not enough for your environment.",
+        moreDetails: [
+          {
+            title: "Notebook extra",
+            body: "Use the notebook extra only when you need widget support in Jupyter.",
+            language: "bash",
+            code: `python -m pip install -U "navexa[notebook]"`
+          },
+          {
+            title: "Editable install or GitHub source",
+            body: "Use one of these paths when you are developing against a local clone or a repository version instead of the published package.",
+            language: "bash",
+            code: `cd /path/to/navexa
+python -m pip install -e .
+
+python -m pip install git+https://github.com/deBUGger404/navexa.git`
+          }
+        ]
       }
     ],
     tryIt: [
-      "Run the smoke command with `--verbose high`.",
-      "Confirm `tree_navexa.json` and `validation_report.json` exist in your output directory.",
-      "Open `tree_navexa.json` and check that top-level sections look reasonable."
+      "Run the import check from the same shell where you installed Navexa.",
+      "Run `navexa-index --help` in the same environment.",
+      "Generate one `tree_navexa.json` before moving on."
     ],
     nextSteps: [
-      {
-        title: "Quickstart: index your first PDF",
-        body: "Run an end-to-end index and inspect the output tree.",
-        to: "/docs/quickstart"
-      },
-      {
-        title: "Environment and LLM setup",
-        body: "Configure OpenAI or Azure credentials for LLM mode.",
-        to: "/docs/env"
-      }
+      next("Quickstart: Index Your First PDF", "/docs/quickstart", "Use the Python wrapper next so you can read the returned result and saved files together."),
+      next("CLI Commands", "/docs/cli", "Use the CLI reference later when you want the full command surface.")
+    ],
+    links: [
+      { label: "PyPI project page", href: PYPI_URL },
+      { label: "Release notes", href: RELEASE_URL }
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "quickstart",
     category: "Get started",
     title: "Quickstart: Index Your First PDF",
     description:
-      "Run the smallest useful workflow: index one PDF, save outputs, and confirm the tree structure.",
-    whatYouBuild: [
-      "A local run that outputs `tree_navexa.json` and `validation_report.json`.",
-      "A baseline to compare no-LLM versus LLM mode later."
+      "Run one small structured workflow, save the canonical outputs, and learn just enough to move into the detailed pages.",
+    whatThisPageIsFor: [
+      "Get one successful end-to-end run with the supported Python API.",
+      "Learn the main outputs without repeating the full structured-data reference here."
+    ],
+    whenToUse: [
+      "You have Navexa installed and want the first clean example.",
+      "You want to confirm the save flow before reading the deeper reference pages.",
+      "You want one example that works without LLM credentials."
     ],
     prerequisites: [
-      "Navexa installed (see Install and Verify page)",
-      "A readable PDF file",
-      "Write access to output directory"
+      "Navexa installed successfully",
+      "One local PDF file",
+      "An output directory path you can write to"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Index in no-LLM mode (recommended first run)",
-        body: "This gives deterministic output and zero LLM cost. Use absolute paths for repeatability.",
+        title: "Index one structured PDF in no-LLM mode",
+        body: "Use the stable structured wrapper first. This is the shortest baseline before you learn the detailed indexing pages.",
         language: "python",
         code: `from navexa import index_structured_document_tree
 
 result = index_structured_document_tree(
     pdf_path="/absolute/path/document.pdf",
     mode="no-llm",
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
     verbosity="medium",
-)`
+)
+
+print(result.meta["document_type"])
+print(result.meta["effective_mode"])`
       },
       {
-        title: "Save outputs",
-        body: "Save the canonical tree and the validation report. If `out_dir=None`, Navexa writes to `<pdf_dir>/<pdf_stem>_navexa_out`.",
+        title: "Save the canonical outputs",
+        body: "Keep `tree_navexa.json` as the main artifact. Add validation so you can inspect the output quality later.",
         language: "python",
         code: `from navexa import save_document_tree
 
 saved = save_document_tree(
-    index_result=result,
-    out_dir="/absolute/path/output",   # or None for default
+    result,
+    out_dir="/absolute/path/out",
     write_tree=True,
     write_validation=True,
-    write_compat=False,
-)
-print(saved.paths)`
-      },
-      {
-        title: "Inspect the generated files",
-        body: "Open the tree and confirm the first few nodes look right (titles, nesting, and text).",
-        language: "bash",
-        code: `ls -la /absolute/path/output
-
-# Optional: quick peek at top-level keys
-python - <<'PY'
-import json
-tree = json.load(open('/absolute/path/output/tree_navexa.json'))
-print(tree.keys())
-print('top_level_nodes:', len(tree.get('structure', [])))
-PY`
-      },
-      {
-        title: "Optional: rerun in LLM mode",
-        body:
-          "LLM mode improves table-of-contents detection and can generate summaries. Set credentials first, then rerun with `mode=\"llm\"`.",
-        language: "bash",
-        code: `export OPENAI_API_KEY="..."
-export OPENAI_MODEL_NAME="gpt-4.1-mini"
-
-python - <<'PY'
-from navexa import index_structured_document_tree
-
-result = index_structured_document_tree(
-    pdf_path="/absolute/path/document.pdf",
-    mode="llm",
-    model=None,
-    verbosity="medium",
 )
 
-print(result.tree_navexa["cost"])
-PY`
+print(saved.paths["tree_navexa"])
+print(saved.paths["validation_report"])`
+      },
+      {
+        title: "Inspect the output fields that matter first",
+        body: "Read the pipeline metadata first. That gives you the mode, parser settings, and warnings without reading the full tree.",
+        language: "python",
+        code: `tree = result.tree_navexa
+
+print(tree["pipeline"]["document_type"])
+print(tree["pipeline"]["requested_mode"])
+print(tree["pipeline"]["effective_mode"])
+print(tree["pipeline"]["parser_config"])
+print(tree["pipeline"]["warnings"])`
       }
     ],
-    whyThisMatters: [
-      "You can validate parsing and hierarchy before spending tokens.",
-      "Saved artifacts make debugging and iteration easier."
+    detailPages: [
+      next(
+        "Structured data",
+        "/docs/data-structured",
+        "Read the full structured-wrapper guide, including the optional LLM path and the parameters that actually matter."
+      ),
+      next(
+        "Save and Load Trees",
+        "/docs/save-fetch",
+        "See the full save, reload, validation, and compatibility workflow after the first run works."
+      ),
+      next(
+        "Output Schema (Canonical)",
+        "/docs/output-schema",
+        "Use the schema page when you want the full meaning of the saved JSON keys."
+      )
+    ],
+    variablesTable: table(
+      ["Field", "What it controls", "Typical values"],
+      [
+        ["pdf_path", "Input document location", "/absolute/path/document.pdf"],
+        ["mode", "Whether Navexa should try to use LLM", "`no-llm` or `llm`"],
+        ["parser_config", "Current grouped parser settings", "{ name, output_format, options }"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "tree_navexa pipeline excerpt",
+        body: "This is the first part of the saved tree most users should inspect.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "document_type": "structured",
+    "requested_mode": "no-llm",
+    "effective_mode": "no-llm",
+    "summary_enabled": true,
+    "parser_config": {
+      "name": "docling",
+      "output_format": "markdown",
+      "options": {
+        "profile": "balanced"
+      }
+    },
+    "warnings": []
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Skipping validation output",
-        fix: "Keep `write_validation=True` during initial development."
+        mistake: "Assuming `requested_mode` and `effective_mode` are always the same",
+        fix: "Read both fields. Optional-LLM flows can fall back to effective `no-llm` when you did not actually enable a working model path."
       },
       {
-        mistake: "Trying transcript mode on non-transcript docs",
-        fix: "Use structured or semi-structured for formal PDFs."
+        mistake: "Reading only the saved tree and ignoring the returned result object",
+        fix: "Use `result.meta` first for quick sanity checks, then inspect `tree_navexa.json` for full detail."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "More about helpers and lighter output",
+        body: "Open these only after the first run works. They are useful, but they are not required for the first quickstart.",
+        moreDetails: [
+          {
+            title: "Use the one-call save helper",
+            language: "python",
+            code: `from navexa import index_and_save_document_tree
+
+index_result, save_result = index_and_save_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    out_dir="/absolute/path/out",
+    mode="no-llm",
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
+    write_tree=True,
+    write_validation=True,
+)`
+          },
+          {
+            title: "Disable node summaries for a lighter tree",
+            body: "Use this only when you already know you do not need summary fields in the output tree.",
+            language: "python",
+            code: `result = index_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    mode="no-llm",
+    if_add_node_summary="no",
+)`
+          }
+        ]
       }
     ],
     tryIt: [
-      "Change `verbosity` from `medium` to `high` and inspect logs.",
-      "Re-run with a second PDF and compare node counts."
+      "Run the quickstart once with `mode=\"no-llm\"`.",
+      "Open `tree_navexa.json` and find `pipeline.requested_mode` and `pipeline.effective_mode`.",
+      "Then move to the detailed structured-data page before adding more options."
     ],
     nextSteps: [
-      {
-        title: "Save and load trees",
-        body: "Learn how to persist the right artifacts and reload them safely.",
-        to: "/docs/save-fetch"
-      },
-      {
-        title: "Reasoning retrieval workflow",
-        body: "Select the right nodes before generating grounded answers.",
-        to: "/docs/reasoning"
-      }
+      next("Environment and LLM Setup", "/docs/env", "Use this only when the no-LLM baseline is already stable."),
+      next("Types of Data Navexa Handles", "/docs/indexing-modes", "Use the decision map to choose the right wrapper for the next document family.")
+    ],
+    links: [
+      { label: "Package source", href: REPO_URL },
+      { label: "Live docs home", href: DOCS_URL }
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "env",
     category: "Get started",
     title: "Environment and LLM Setup",
     description:
-      "Configure keys, model selection, verbosity, and parser defaults. This page is your runtime contract.",
-    whatYouBuild: [
-      "A reusable `.env` setup for OpenAI or Azure.",
-      "Predictable model/mode behavior across scripts and notebooks."
+      "Choose a clean provider setup, decide between env defaults and `model_config`, and keep the rest of the detail in the deeper pages that use it.",
+    whatThisPageIsFor: [
+      "Set up the current LLM configuration path without burying the main indexing and reasoning guides in provider setup.",
+      "Show the difference between env defaults and explicit `model_config`."
+    ],
+    whenToUse: [
+      "You are turning on LLM indexing or any reasoning function.",
+      "You want reproducible model selection in code or shared defaults in a shell environment.",
+      "You are moving older `model=...` examples toward `model_config`."
     ],
     prerequisites: [
-      "One API provider account (OpenAI or Azure OpenAI)",
-      "Access to edit environment variables or a `.env` file"
+      "A provider decision: `openai` or `azure`",
+      "A valid API key",
+      "A model or deployment name"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Understand how Navexa loads environment",
-        body:
-          "Navexa can read config from OS environment variables or `.env` files. If a value exists in multiple places, the first match wins.",
-        language: "text",
-        code: `Env loading order:
-1) NAVEXA_ENV_FILE (explicit .env file path)
-2) .env in your current directory (or parent)
-3) repo-local .env (fallback)`
-      },
-      {
-        title: "Configure OpenAI credentials",
-        body:
-          "Minimal OpenAI setup. Set provider to `openai`. Start with `NAVEXA_MODE=no-llm`, then enable `llm` after this works.",
-        language: "dotenv",
-        code: ` # OpenAI auth
-NAVEXA_LLM_PROVIDER=openai
-OPENAI_API_KEY=...
-OPENAI_MODEL_NAME=gpt-4.1-mini
-
-# Docling extraction
-NAVEXA_MODE=llm
-NAVEXA_VERBOSE=medium
-NAVEXA_IF_ADD_NODE_SUMMARY=yes`
-      },
-      {
-        title: "Or configure Azure OpenAI",
-        body: "Set provider to `azure`. Use deployment name for runtime and raw model name for pricing metadata.",
+        title: "Choose your config style",
+        body: "Use env variables when you want one shared default across runs. Use `model_config` when you want the model setup visible right next to the call site.",
         bullets: [
-          "Use `AZURE_DEPLOYMENT_NAME` for actual API requests in Azure OpenAI.",
-          "Use `AZURE_DEPLOYMENT_RAW_NAME` as the raw model family name (for example `gpt-4.1-mini`).",
-          "Keep both values: deployment name for runtime, raw model name for exact pricing lookup."
-        ],
-        language: "dotenv",
-        code: `# Azure OpenAI auth
-NAVEXA_LLM_PROVIDER=azure
-AZURE_OPENAI_API_KEY=...
-AZURE_OPENAI_BASE_URL=https://<resource>.openai.azure.com/openai/v1
-AZURE_DEPLOYMENT_NAME=<deployment-name>
-AZURE_DEPLOYMENT_RAW_NAME=gpt-4.1-mini
-
-# Docling extraction
-NAVEXA_MODE=llm
-NAVEXA_VERBOSE=medium
-NAVEXA_IF_ADD_NODE_SUMMARY=yes`
+          "Use env defaults for local development shells or shared notebook kernels.",
+          "Use `model_config` when you want the example to be fully self-contained in Python code.",
+          "Do not teach `model=` in new examples."
+        ]
       },
       {
-        title: "Use a custom .env file path (optional)",
-        body: "If you don’t want a `.env` in your working directory, point Navexa to a specific file.",
+        title: "Set one provider baseline",
+        body: "OpenAI is the smallest baseline example. If you use Azure instead, open the detail block below and swap in the Azure fields.",
         language: "bash",
-        code: `export NAVEXA_ENV_FILE="/absolute/path/to/.env"`
+        code: `export NAVEXA_LLM_PROVIDER="openai"
+export OPENAI_API_KEY="..."
+export OPENAI_MODEL_NAME="gpt-4.1-mini"`,
+        moreDetails: [
+          {
+            title: "Azure OpenAI environment variables",
+            body: "You can provide the Azure resource URL directly. Navexa adds `/openai/v1` when the resource path does not already contain it.",
+            language: "bash",
+            code: `export NAVEXA_LLM_PROVIDER="azure"
+export AZURE_OPENAI_API_KEY="..."
+export AZURE_OPENAI_BASE_URL="https://<resource>.openai.azure.com"
+export AZURE_DEPLOYMENT_NAME="my-gpt41mini-deployment"
+export AZURE_DEPLOYMENT_RAW_NAME="gpt-4.1-mini"`
+          }
+        ]
       },
       {
-        title: "Start from .env.example (optional)",
-        body: "If you cloned the repo, copy `.env.example` and fill in your values.",
-        language: "bash",
-        code: `cp .env.example .env\n# edit .env`
-      },
-      {
-        title: "Set parser behavior",
-        body: "Choose markdown or text output and OCR policy.",
-        language: "dotenv",
-        code: `NAVEXA_PARSER_MODEL=docling
-NAVEXA_DOCLING_OUTPUT_FORMAT=markdown
-NAVEXA_DOCLING_OCR=0
-NAVEXA_DOCLING_IMAGE_MODE=placeholder`
-      },
-      {
-        title: "LLM credential variables (reference)",
-        body: "You only need one provider set (OpenAI or Azure OpenAI).",
-        table: {
-          headers: ["Variable", "Purpose", "Example"],
-          rows: [
-            ["NAVEXA_LLM_PROVIDER", "LLM provider switch", "openai or azure"],
-            ["OPENAI_API_KEY", "OpenAI API key (openai provider)", "sk-..."],
-            ["OPENAI_MODEL_NAME", "OpenAI model name (openai provider)", "gpt-4.1-mini"],
-            ["AZURE_OPENAI_API_KEY", "Azure API key (azure provider)", "..."],
-            ["AZURE_OPENAI_BASE_URL", "Azure base URL (azure provider)", "https://.../openai/v1"],
-            ["AZURE_DEPLOYMENT_NAME", "Azure deployment name (azure provider)", "my-deployment"],
-            ["AZURE_DEPLOYMENT_RAW_NAME", "Raw model name for pricing map/metadata", "gpt-4.1-mini"]
-          ]
-        }
-      },
-      {
-        title: "Model resolution (when model=None)",
-        body:
-          "If you don’t pass `model=...`, Navexa resolves from env by provider. If required model env is missing, throw a clear error (do not silently fallback).",
-        table: {
-          headers: ["Priority", "Resolution / error"],
-          rows: [
-            ["1", "explicit model= parameter"],
-            ["2", "if provider=openai: OPENAI_MODEL_NAME"],
-            ["3", "if provider=azure: AZURE_DEPLOYMENT_NAME"],
-            [
-              "4",
-              "if missing: raise error -> 'Model is not configured. Pass model=... explicitly, or set OPENAI_MODEL_NAME (openai) / AZURE_DEPLOYMENT_NAME (azure).'"
-            ]
-          ]
-        }
-      },
-      {
-        title: "Pipeline defaults (reference)",
-        body: "These variables control default behavior when you don’t pass explicit parameters.",
-        table: {
-          headers: ["Variable", "Purpose", "Default"],
-          rows: [
-            ["NAVEXA_MODE", "Runtime mode (llm or no-llm)", "no-llm"],
-            ["NAVEXA_DOCUMENT_TYPE", "Default document type", "structured"],
-            ["NAVEXA_VERBOSE", "Verbosity (low/medium/high or 1/2/3)", "medium"],
-            ["NAVEXA_IF_ADD_NODE_SUMMARY", "Include summaries (yes/no)", "yes"],
-            ["NAVEXA_MAX_TOKEN_NUM_EACH_NODE", "Max tokens per node", "12000"],
-            ["NAVEXA_MAX_PAGE_NUM_EACH_NODE", "Max pages per node", "8"],
-            ["NAVEXA_DISABLE_SUMMARY", "Force-disable summaries (0/1)", "0"]
-          ]
-        }
-      },
-      {
-        title: "Docling parser controls (reference)",
-        body: "These variables tune PDF parsing and OCR. Start with OCR off unless the PDF is scanned.",
-        table: {
-          headers: ["Variable", "Purpose", "Default"],
-          rows: [
-            ["NAVEXA_PARSER_MODEL", "Parser backend", "docling"],
-            ["NAVEXA_DOCLING_OUTPUT_FORMAT", "markdown or text", "markdown"],
-            ["NAVEXA_DOCLING_OCR", "Enable OCR (0/1)", "0"],
-            ["NAVEXA_RAPIDOCR_BACKEND", "OCR backend", "torch"],
-            ["NAVEXA_DOCLING_FORCE_FULL_PAGE_OCR", "Force OCR on full page (0/1)", "0"],
-            ["NAVEXA_DOCLING_PICTURE_DESCRIPTION", "Picture descriptions (0/1)", "0"],
-            ["NAVEXA_DOCLING_REMOTE_SERVICES", "Enable remote services (0/1)", "0"],
-            ["NAVEXA_DOCLING_IMAGE_MODE", "placeholder/embedded/referenced/none", "placeholder"],
-            ["NAVEXA_DOCLING_QUIET", "Reduce Docling/RapidOCR logs (0/1)", "1"]
-          ]
-        }
-      },
-      {
-        title: "Load env in Python (optional)",
-        body: "If you prefer, you can load `.env` from Python before calling any APIs.",
+        title: "Use model_config directly in code",
+        body: "This is the preferred explicit API path when you want the model settings next to the call site.",
         language: "python",
-        code: `from navexa import load_navexa_env
+        code: `${openAiModelConfig}
 
-load_navexa_env()  # reads NAVEXA_ENV_FILE / .env as described above`
+result = index_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    mode="llm",
+    model_config=model_config,
+)`
       }
     ],
-    whyThisMatters: [
-      "Most runtime issues come from missing keys, wrong model names, or mismatched parser settings.",
-      "A stable environment makes indexing behavior reproducible."
+    detailPages: [
+      next(
+        "Structured data",
+        "/docs/data-structured",
+        "See how `model_config` is used in the normal structured indexing flow after the provider setup is ready."
+      ),
+      next(
+        "Transcript data",
+        "/docs/data-transcript",
+        "Use this page when you want the clearest example of an indexing wrapper that is always LLM-required."
+      ),
+      next(
+        "Reasoning Retrieval Workflow",
+        "/docs/reasoning",
+        "Reuse the same provider setup for grounded question answering over saved trees."
+      )
+    ],
+    variablesTable: table(
+      ["Field", "Meaning", "Typical values"],
+      [
+        ["provider", "LLM provider switch", "`openai` or `azure`"],
+        ["model", "OpenAI model name or Azure deployment name", "`gpt-4.1-mini`, `my-deployment`"],
+        ["api_key", "Credential used by the selected provider", "provider API key string"],
+        ["base_url", "Azure endpoint or compatible custom base URL", "`https://<resource>.openai.azure.com`"],
+        ["pricing_model", "Optional billing label, mostly useful for Azure custom deployments", "`gpt-4.1-mini`"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Serialized model metadata in the saved tree",
+        body: "Navexa writes safe model metadata to output. Secrets are not written.",
+        language: "json",
+        code: `{
+  "model_config": {
+    "provider": "azure",
+    "model": "my-gpt41mini-deployment",
+    "pricing_model": "gpt-4.1-mini",
+    "api_key_configured": true,
+    "base_url_configured": true,
+    "source": "model_config"
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Using `mode=llm` without a key",
-        fix: "Set provider first (`NAVEXA_LLM_PROVIDER`) and then set matching credentials: OpenAI (`OPENAI_API_KEY`) or Azure (`AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_BASE_URL`)."
+        mistake: "Setting Azure credentials while `NAVEXA_LLM_PROVIDER` still points to OpenAI",
+        fix: "Always set the provider first, then provide the matching credentials and model/deployment fields."
       },
       {
-        mistake: "Forgetting that transcript and semi-structured flows require LLM",
-        fix: "Treat those flows as fail-fast if key/model are missing."
+        mistake: "Thinking Azure base_url must already contain `/openai/v1`",
+        fix: "It is allowed, but not required. Navexa normalizes the Azure resource URL for you when needed."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "More provider and compatibility details",
+        body: "Open these only when you need provider-specific or migration-specific behavior.",
+        moreDetails: [
+          {
+            title: "Recommended model_config shapes",
+            body: "These are the grouped shapes to teach first in Python examples.",
+            language: "python",
+            code: `${openAiModelConfig}
+
+${azureModelConfig}`
+          },
+          {
+            title: "Use NAVEXA_ENV_FILE for a dedicated env file",
+            language: "bash",
+            code: `export NAVEXA_ENV_FILE="/absolute/path/to/.env"`
+          },
+          {
+            title: "Current model resolution order",
+            body: "Current runtime still honors the deprecated `model=` override first for compatibility. Keep that in mind when you debug older examples.",
+            language: "text",
+            code: `Current runtime order:
+1. deprecated explicit model=
+2. model_config["model"]
+3. OPENAI_MODEL_NAME or AZURE_DEPLOYMENT_NAME`
+          }
+        ]
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Legacy model argument",
+        body: "The public wrappers still accept `model=...`, but that path is deprecated. Use `model_config={...}` in examples and new code."
       }
     ],
     tryIt: [
-      "Run one `no-llm` index and one `llm` index on the same PDF.",
-      "Compare `cost` and `summary_coverage` in output JSON."
+      "Set one provider path and verify it with a single `mode=\"llm\"` call.",
+      "Inspect `tree_navexa.pipeline.model_config` after saving a run.",
+      "Only keep `model=` in old migration code, not in new examples."
     ],
     nextSteps: [
-      {
-        title: "Choose your indexing function",
-        body: "Map document quality to the right API function.",
-        to: "/docs/indexing-modes"
-      }
+      next("Types of Data Navexa Handles", "/docs/indexing-modes", "Use the wrapper decision page before you index a new document family."),
+      next("Reasoning Retrieval Workflow", "/docs/reasoning", "Move here once the provider setup is stable and you want grounded question answering.")
+    ],
+    links: [
+      { label: "PyPI project page", href: PYPI_URL },
+      { label: "Release notes", href: RELEASE_URL }
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "indexing-modes",
     category: "Core concepts",
     title: "Types of Data Navexa Handles",
     description:
-      "Use this page as your decision guide. Then open each subtype page in the left menu for full, step-by-step implementation details.",
-    whatYouBuild: [
-      "A quick decision map for structured, semi-structured, unstructured, and transcript documents.",
-      "A stable workflow for selecting the right indexing API before coding."
+      "Use this page as a decision map. Pick the wrapper that matches the document shape first, then learn the subtype page for the variables that actually matter for that flow.",
+    whatThisPageIsFor: [
+      "Choose the correct indexing wrapper before tuning parser or model settings.",
+      "Understand which flows are optional-LLM and which are strictly LLM-required.",
+      "See which document types actually use parser_config and Docling."
     ],
-    prerequisites: [
-      "Basic familiarity with Navexa indexing API",
-      "Sample documents representing each document type"
+    whenToUse: [
+      "You are starting a new indexing integration.",
+      "You are unsure whether a PDF should be treated as structured, semi-structured, unstructured, or transcript.",
+      "You want the shortest mental model before diving into each subtype page."
     ],
     datasets: [
       {
         title: "Structured data",
-        description: "Clean sectioned PDFs with stable heading order.",
+        description: "Manuals, policy docs, reports, and other PDFs with reliable headings.",
         image: asset("type1.png"),
         to: "/docs/data-structured"
       },
       {
         title: "Semi-structured data",
-        description: "Inconsistent heading styles normalized with LLM support.",
+        description: "Documents with inconsistent headings or mixed structure that still benefit from section recovery.",
         image: asset("type2.png"),
         to: "/docs/data-semi-structured"
       },
       {
         title: "Unstructured data",
-        description: "Weak/missing headings where Navexa synthesizes structure.",
+        description: "Long text without a dependable heading hierarchy.",
         image: asset("type3.png"),
         to: "/docs/data-unstructured"
       },
       {
         title: "Transcript data",
-        description: "Call/interview transcripts grouped into topic nodes.",
+        description: "Calls, interviews, and conversation-heavy documents grouped by topic.",
         image: asset("type4.png"),
         to: "/docs/data-transcript"
       }
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Structured documents (best default)",
-        body:
-          "Choose this for manuals, labels, and regulatory PDFs where headings are clear and ordered.",
-        bullets: [
-          "Regulatory labels and prescribing information PDFs.",
-          "Product manuals with numbered chapters and subchapters.",
-          "SOP documents with consistent heading hierarchy."
-        ]
+        title: "Match the wrapper to document shape",
+        body: "Start from structure, not from model settings. The wrapper decides the indexing strategy."
       },
       {
-        title: "Semi-structured documents",
-        body:
-          "Choose this when headings exist but numbering/order is inconsistent. LLM is required by design.",
-        bullets: [
-          "Compliance/policy PDFs where some headings are numbered and others are plain text.",
-          "Legacy reports where formatting changes between pages.",
-          "Documents merged from multiple templates."
-        ]
+        title: "Choose mode deliberately",
+        body: "Structured, semi-structured, and unstructured flows can all run without LLM. Transcript is the only indexing flow that is strictly LLM-required."
       },
       {
-        title: "Unstructured documents",
-        body: "Choose this for weak/no heading documents. Navexa synthesizes a usable hierarchy.",
-        bullets: [
-          "Narrative reports with long paragraphs and minimal section markers.",
-          "OCR-heavy scanned files where heading detection is unreliable.",
-          "Free-form notes and loosely formatted project documents."
-        ]
-      },
-      {
-        title: "Transcript documents",
-        body:
-          "Choose this for calls/interviews. Navexa groups transcript nodes by topic with source-backed spans.",
-        bullets: [
-          "Call logs exported as transcripts.",
-          "Meeting recordings converted to text.",
-          "Customer support conversations and interview transcripts."
-        ]
-      },
-      {
-        title: "Open the detailed subtype pages",
-        body:
-          "Use the left sidebar subsection under this page to open detailed pages for Structured, Semi-structured, Unstructured, and Transcript data. Each page includes setup, variable changes, save flow, and checks.",
-        table: {
-          headers: ["Subtype page", "When to use", "LLM requirement", "Example input"],
-          rows: [
-            ["Structured data", "Clean sectioned PDFs", "Optional", "Regulatory label / technical manual"],
-            ["Semi-structured data", "Inconsistent heading styles", "Required", "Mixed-format policy/compliance PDF"],
-            ["Unstructured data", "Weak/missing headings", "Optional (recommended)", "Narrative report / OCR-heavy file"],
-            ["Transcript data", "Interview/call transcripts", "Required", "Meeting transcript / support call"]
-          ]
-        }
+        title: "Only configure parser settings when the flow uses Docling",
+        body: "Structured, semi-structured, and unstructured flows use parser_config. Transcript does not use the Docling parser path in the public wrapper."
       }
     ],
-    whyThisMatters: [
-      "Wrong function selection leads to weak topic boundaries and noisy retrieval.",
-      "Correct flow selection improves both answer quality and cost efficiency."
-    ],
+    variablesTable: table(
+      ["Wrapper", "Best fit", "LLM requirement", "Parser config relevance"],
+      [
+        ["index_structured_document_tree", "Clear headings and normal document hierarchy", "Optional", "Yes"],
+        ["index_semi_structured_document_tree", "Messy or partial headings", "Optional", "Yes"],
+        ["index_unstructured_document_tree", "Heading-poor text", "Optional", "Yes"],
+        ["index_transcript_document_tree", "Calls, interviews, meetings", "Required", "No"]
+      ]
+    ),
     commonMistakes: [
       {
-        mistake: "Using transcript mode for formal manuals",
-        fix: "Use structured mode for heading-heavy docs and transcript mode only for conversation-style text."
+        mistake: "Using transcript mode for formal manuals or reports",
+        fix: "Choose transcript only for conversation-style documents. Start with structured or semi-structured for normal PDFs."
       },
       {
-        mistake: "Assuming all modes require LLM",
-        fix: "Only transcript is strictly LLM-required by pipeline. Semi-structured wrapper enforces LLM mode, while unstructured can run with or without LLM."
-      },
+        mistake: "Assuming semi-structured still requires LLM",
+        fix: "That was older behavior. Current code supports both `no-llm` and `llm` for semi-structured indexing."
+      }
+    ],
+    advancedOptions: [
       {
-        mistake: "Forgetting prompt overrides exist",
-        fix: "Semi-structured and transcript flows accept prompt template overrides if you need custom behavior."
+        title: "Read requested_mode and effective_mode together",
+        body: "Those fields tell you what you asked for and what Navexa actually used after validation.",
+        language: "json",
+        code: `{
+  "requested_mode": "llm",
+  "effective_mode": "no-llm"
+}`
       }
     ],
     tryIt: [
-      "Run the same PDF with structured and unstructured modes.",
-      "Compare node hierarchy depth and retrieval relevance."
+      "Pick one real PDF and decide the wrapper before touching parser settings.",
+      "Read the subtype page that matches your wrapper next.",
+      "Keep transcript separate from the Docling parser mental model."
     ],
     nextSteps: [
-      {
-        title: "Structured data guide",
-        body: "Start with the safest default mode.",
-        to: "/docs/data-structured"
-      }
-    ]
+      next("Structured data", "/docs/data-structured"),
+      next("Parser Parameter Setup", "/docs/parser-setup")
+    ],
+    links: [{ label: "Package source", href: REPO_URL }]
   }),
-  withCoreToc({
+  createArticle({
     id: "data-structured",
-    navParentId: "indexing-modes",
     category: "Core concepts",
+    navParentId: "indexing-modes",
     title: "Structured data",
     description:
-      "For clean PDFs with stable headings. This is the recommended starting mode for most teams.",
-    whatYouBuild: [
-      "A clean hierarchy tree with strong parent-child boundaries.",
-      "A reliable baseline output you can compare with other modes."
+      "Use this flow for PDFs with stable headings and a mostly reliable document hierarchy. It is the best default for your first successful index.",
+    whatThisPageIsFor: [
+      "Teach the default indexing wrapper for normal heading-based documents.",
+      "Show the clean no-LLM baseline and the optional LLM upgrade path.",
+      "Highlight the fields that matter most for structured runs."
     ],
-    prerequisites: ["Sectioned PDF", "Navexa installed", "Optional LLM credentials"],
+    whenToUse: [
+      "Manuals, policy documents, research-style PDFs, and reports with usable headings",
+      "You want the most stable first run",
+      "You want parser_config and Docling options to matter"
+    ],
+    prerequisites: [
+      "A heading-based PDF",
+      "A parser profile choice if you need OCR/table tuning",
+      "Optional LLM settings only if you want `mode=\"llm\"`"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Index a structured PDF",
-        body: "Start with `no-llm` to verify parser, paths, and output quality quickly.",
+        title: "Run the baseline structured index",
+        body: "Start with a deterministic run and only add LLM after you have a good tree shape.",
         language: "python",
         code: `from navexa import index_structured_document_tree
 
 result = index_structured_document_tree(
-    pdf_path="/absolute/path/structured.pdf",
+    pdf_path="/absolute/path/document.pdf",
     mode="no-llm",
-    verbosity="medium",
-    if_add_node_summary="no",
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
 )`
       },
       {
-        title: "Enable LLM only when needed",
-        body:
-          "If headings/page mapping need improvement, switch to `mode=\"llm\"` and add provider model/deployment.",
-        language: "python",
-        code: `result = index_structured_document_tree(
-    pdf_path="/absolute/path/structured.pdf",
-    mode="llm",
-    model="gpt-4.1-mini",  # or Azure deployment name
-    if_add_node_summary="yes",
-)`
-      },
-      {
-        title: "Save outputs",
-        body: "Persist canonical tree and validation report for QA and debugging.",
+        title: "Save and inspect the result",
+        body: "Check the saved tree first, especially the parser metadata and top-level structure.",
         language: "python",
         code: `from navexa import save_document_tree
 
-saved = save_document_tree(
-    index_result=result,
-    out_dir="/absolute/path/out",
-    write_tree=True,
-    write_validation=True,
-    write_compat=False,
-)
-print(saved.paths)`
+saved = save_document_tree(result, "/absolute/path/out", write_tree=True, write_validation=True)
+print(saved.paths["tree_navexa"])`
       },
       {
-        title: "Variables you usually change",
-        body:
-          "Only structured-flow inputs are listed here (`index_structured_document_tree(...)`).",
-        table: {
-          headers: ["Parameter", "Why change it", "Common value"],
-          rows: [
-            ["pdf_path", "Input document location", "/absolute/path/file.pdf"],
-            ["model", "Choose model/deployment for LLM mode", "gpt-4.1-mini or Azure deployment"],
-            ["mode", "deterministic vs LLM-assisted", "no-llm | llm"],
-            ["verbosity", "debug depth", "low | medium | high"],
-            ["parser_model", "parser backend selection", "docling"],
-            ["output_format", "parser output style", "markdown | text"],
-            ["docling_options", "Override parser profile/OCR in code", "{ profile: 'balanced', ... }"],
-            ["max_token_num_each_node", "split large nodes", "12000 or lower"],
-            ["max_page_num_each_node", "split long page spans", "8 or lower"],
-            ["if_add_node_summary", "cost vs summary coverage", "no | yes"]
-          ]
-        }
+        title: "Optional: upgrade to LLM mode",
+        body: "Once the no-LLM baseline is stable, use `model_config` for the LLM-enhanced path.",
+        language: "python",
+        code: `result = index_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    mode="llm",
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
+)`
       }
     ],
-    whyThisMatters: [
-      "Structured mode gives the most stable tree when source headings are good.",
-      "It minimizes avoidable complexity in early implementation."
+    variablesTable: table(
+      ["Field", "Why you change it", "Typical values"],
+      [
+        ["mode", "Control LLM usage", "`no-llm` first, `llm` later"],
+        ["parser_config", "Current parser tuning path", "{ name, output_format, options }"],
+        ["max_token_num_each_node", "Split large nodes by token budget", "12000 by default"],
+        ["max_page_num_each_node", "Split large nodes by page budget", "8 by default"],
+        ["if_add_node_summary", "Keep or drop summary fields", "`yes` or `no`"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Structured run output excerpt",
+        body: "Structured runs record the resolved parser config and mode metadata in the canonical JSON.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "document_type": "structured",
+    "requested_mode": "no-llm",
+    "effective_mode": "no-llm",
+    "parser_config": {
+      "name": "docling",
+      "output_format": "markdown",
+      "options": {
+        "profile": "balanced"
+      }
+    }
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Running LLM mode before no-LLM baseline",
-        fix: "Run once with `no-llm` first so failures are easier to isolate."
+        mistake: "Starting with LLM before you know the structure is sound",
+        fix: "Run one no-LLM baseline first and inspect the top-level nodes before paying for LLM work."
+      },
+      {
+        mistake: "Requesting `output_format=\"text\"` and expecting a normal structured heading tree",
+        fix: "Current code forces structured output back to markdown because the structured flow depends on heading-aware parsing."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Skip summaries for a lighter tree",
+        body: "If you set `if_add_node_summary=\"no\"`, Navexa omits summary fields from nodes instead of leaving stale empty placeholders.",
+        language: "python",
+        code: `result = index_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    mode="no-llm",
+    if_add_node_summary="no",
+)`
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Legacy flat parser args",
+        body: "The wrapper still accepts `parser_model`, `output_format`, and `docling_options`, but new examples should use `parser_config={...}` first."
       }
     ],
     tryIt: [
-      "Run once with summaries off, then on, and compare cost block in output JSON.",
-      "Check top-level titles in `tree_navexa.json` for heading quality."
+      "Run one structured no-LLM index.",
+      "Inspect the saved parser metadata in `tree_navexa.json`.",
+      "Only then compare it to an LLM-enabled rerun."
     ],
     nextSteps: [
-      {
-        title: "Semi-structured data",
-        body: "Use this when heading quality drops.",
-        to: "/docs/data-semi-structured"
-      }
+      next("Semi-structured data", "/docs/data-semi-structured"),
+      next("Parser Parameter Setup", "/docs/parser-setup")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "data-semi-structured",
-    navParentId: "indexing-modes",
     category: "Core concepts",
+    navParentId: "indexing-modes",
     title: "Semi-structured data",
     description:
-      "For PDFs where headings exist but formats are inconsistent. This flow requires LLM.",
-    whatYouBuild: [
-      "A normalized heading tree from inconsistent document structure.",
-      "Cleaner parent/child grouping than naive heading parsing."
+      "Use this flow when headings exist but are inconsistent, incomplete, or too weak for a normal structured run. Current code supports both `no-llm` and `llm` here.",
+    whatThisPageIsFor: [
+      "Show the current semi-structured wrapper behavior instead of the older LLM-required assumption.",
+      "Teach the safe baseline: run without LLM first, then add LLM only if heading recovery needs help.",
+      "Explain the semi-structured prompt hook without making it the default path."
     ],
-    prerequisites: ["LLM credentials configured", "Input PDF with inconsistent headings"],
+    whenToUse: [
+      "Messy reports, scanned policies, or PDFs with uneven heading quality",
+      "The document is not truly unstructured, but the heading tree is not reliable enough for the normal structured wrapper",
+      "You want optional LLM assistance instead of mandatory LLM"
+    ],
+    prerequisites: [
+      "A document with weak or inconsistent headings",
+      "Parser settings if OCR or table behavior matters",
+      "Optional LLM settings only if you want LLM-assisted heading recovery"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Run semi-structured index",
-        body: "LLM is required here; Navexa fails fast if model/key are missing.",
+        title: "Run a no-LLM baseline first",
+        body: "Current code supports this. Use it to see how much structure Navexa can recover deterministically.",
         language: "python",
         code: `from navexa import index_semi_structured_document_tree
 
 result = index_semi_structured_document_tree(
-    pdf_path="/absolute/path/semi.pdf",
-    model="gpt-4.1-mini",  # Azure: deployment name
-    verbosity="medium",
-    if_add_node_summary="yes",
+    pdf_path="/absolute/path/document.pdf",
+    mode="no-llm",
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
 )`
       },
       {
-        title: "Provider-specific model variable",
-        body: "For Azure, pass deployment name at runtime and keep raw name in env for pricing metadata.",
-        language: "dotenv",
-        code: `# OpenAI
-NAVEXA_LLM_PROVIDER=openai
-OPENAI_MODEL_NAME=gpt-4.1-mini
-
-# Azure OpenAI
-NAVEXA_LLM_PROVIDER=azure
-AZURE_DEPLOYMENT_NAME=my-gpt41mini-deployment
-AZURE_DEPLOYMENT_RAW_NAME=gpt-4.1-mini`
-      },
-      {
-        title: "Variables you usually change",
-        body:
-          "Only semi-structured inputs are listed here (`index_semi_structured_document_tree(...)`).",
-        table: {
-          headers: ["Parameter", "Why change it", "Common value"],
-          rows: [
-            ["pdf_path", "Input document location", "/absolute/path/semi.pdf"],
-            ["model", "Choose model/deployment", "gpt-4.1-mini or Azure deployment"],
-            ["verbosity", "Debug depth", "low | medium | high"],
-            ["parser_model", "Parser backend", "docling"],
-            ["output_format", "Parser output style", "markdown | text"],
-            ["docling_options", "Override parser profile/OCR in code", "{ profile: 'balanced', ... }"],
-            ["max_token_num_each_node", "Split large nodes", "12000 or lower"],
-            ["max_page_num_each_node", "Split long page spans", "8 or lower"],
-            ["if_add_node_summary", "Cost vs summary coverage", "no | yes"],
-            ["semi_heading_prompt_template", "Custom heading normalization prompt", "custom template string"]
-          ]
-        }
-      },
-      {
-        title: "Save and validate",
-        body: "Save validation output to inspect anchor match and overlap metrics.",
+        title: "Enable LLM only when heading recovery needs help",
+        body: "LLM acts as an enhancer for weak outlines. It is not the only supported path anymore.",
         language: "python",
-        code: `from navexa import save_document_tree
-save_document_tree(result, "/absolute/path/out", write_tree=True, write_validation=True)`
+        code: `result = index_semi_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    mode="llm",
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "balanced"},
+    },
+)`
+      },
+      {
+        title: "Customize heading extraction only when you truly need it",
+        body: "The prompt hook is there for difficult documents, but keep the default prompt until you have a reproducible reason to change it.",
+        language: "python",
+        code: `result = index_semi_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    mode="llm",
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
+    semi_heading_prompt_template="Custom prompt text here...",
+)`
       }
     ],
-    whyThisMatters: [
-      "Semi-structured docs often fail in strict heading parsers.",
-      "LLM normalization improves hierarchy quality before retrieval."
+    variablesTable: table(
+      ["Field", "Why you change it", "Typical values"],
+      [
+        ["mode", "Choose deterministic or LLM-assisted heading recovery", "`no-llm` or `llm`"],
+        ["model_config", "Only needed for LLM-assisted runs", "{ provider, model, api_key, base_url, pricing_model }"],
+        ["parser_config", "Parser control for the document extraction stage", "{ name, output_format, options }"],
+        ["semi_heading_prompt_template", "Advanced custom heading prompt", "custom string"],
+        ["if_add_node_summary", "Keep or remove summary fields", "`yes` or `no`"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Semi-structured pipeline excerpt",
+        body: "Semi-structured runs expose where the effective headings came from.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "document_type": "semi_structured",
+    "requested_mode": "llm",
+    "effective_mode": "llm",
+    "semi_structured_source": "llm",
+    "verify_accuracy": 1.0
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Using this flow without LLM config",
-        fix: "Set provider and model/deployment first; this flow is intentionally fail-fast."
+        mistake: "Teaching semi-structured as LLM-required",
+        fix: "Current code does not require that. Start with `mode=\"no-llm\"` unless you know you need the enhancer."
+      },
+      {
+        mistake: "Using transcript for messy documents that are still document-shaped",
+        fix: "Transcript is for conversation-style content. Semi-structured is the correct choice for weak document headings."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Compare the same file in no-LLM and LLM mode",
+        body: "This is the fastest way to decide whether the LLM enhancer is worth keeping for that document family."
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Older wrapper behavior is outdated",
+        body: "If you see docs or examples claiming that semi-structured raises immediately without LLM, treat them as stale."
       }
     ],
     tryIt: [
-      "Compare this mode against structured mode on the same noisy PDF.",
-      "Inspect whether section nesting improved."
+      "Run the same semi-structured PDF once in `no-llm` and once in `llm`.",
+      "Compare `semi_structured_source` and top-level sections.",
+      "Keep the cheaper path if the structure quality is already acceptable."
     ],
     nextSteps: [
-      {
-        title: "Unstructured data",
-        body: "If headings are missing entirely, use unstructured flow.",
-        to: "/docs/data-unstructured"
-      }
+      next("Unstructured data", "/docs/data-unstructured"),
+      next("Parser config (recommended)", "/docs/parser-config")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "data-unstructured",
-    navParentId: "indexing-modes",
     category: "Core concepts",
+    navParentId: "indexing-modes",
     title: "Unstructured data",
     description:
-      "For weak/no heading documents. Navexa synthesizes a practical tree from raw content.",
-    whatYouBuild: [
-      "A usable tree when documents lack good section headers.",
-      "A retrieval-ready structure from otherwise noisy content."
+      "Use this flow for long text with weak or missing headings. Parser settings still matter here, but the document is segmented more like content blocks than a classic heading tree.",
+    whatThisPageIsFor: [
+      "Show the correct wrapper for text-heavy documents with poor heading structure.",
+      "Keep the current-first workflow: baseline run, save output, then optional LLM upgrade.",
+      "Explain the node size controls that matter more for this flow."
     ],
-    prerequisites: ["Input PDF with weak heading quality", "Optional: LLM credentials for better section titles/summaries"],
+    whenToUse: [
+      "The document has little usable heading structure",
+      "You care more about chunk quality than heading fidelity",
+      "You still want canonical Navexa tree output and later reasoning"
+    ],
+    prerequisites: [
+      "A text-heavy PDF",
+      "A parser configuration if OCR or output format matters",
+      "Optional LLM settings only if you want LLM-assisted sectioning"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Run unstructured index",
-        body: "Unstructured flow can run in `no-llm` or `llm`. Start with `no-llm`, then enable LLM for better section quality if needed.",
+        title: "Run the unstructured index",
+        body: "This wrapper is built for documents where heading recovery is not the main strategy.",
         language: "python",
         code: `from navexa import index_unstructured_document_tree
 
 result = index_unstructured_document_tree(
-    pdf_path="/absolute/path/unstructured.pdf",
+    pdf_path="/absolute/path/document.pdf",
     mode="no-llm",
-    if_add_node_summary="no",
-    verbosity="medium",
+    parser_config={
+        "name": "docling",
+        "output_format": "text",
+        "options": {"profile": "fast_text"},
+    },
 )`
       },
       {
-        title: "Tune summary behavior",
-        body: "Switch to LLM mode when you want stronger generated section titles/summaries.",
+        title: "Tune node size before you tune anything else",
+        body: "Large unstructured documents often benefit more from node-size control than from parser micro-optimizations.",
         language: "python",
         code: `result = index_unstructured_document_tree(
-    pdf_path="/absolute/path/unstructured.pdf",
-    mode="llm",
-    model="gpt-4.1-mini",   # Azure: deployment name
-    if_add_node_summary="yes",
+    pdf_path="/absolute/path/document.pdf",
+    mode="no-llm",
+    max_token_num_each_node=8000,
+    max_page_num_each_node=4,
 )`
       },
       {
-        title: "Variables you usually change",
-        body:
-          "Only unstructured inputs are listed here (`index_unstructured_document_tree(...)`).",
-        table: {
-          headers: ["Parameter", "Why change it", "Common value"],
-          rows: [
-            ["pdf_path", "Input document location", "/absolute/path/unstructured.pdf"],
-            ["model", "Choose model/deployment", "gpt-4.1-mini or Azure deployment"],
-            ["mode", "Choose deterministic or LLM-assisted", "no-llm | llm"],
-            ["verbosity", "Debug depth", "low | medium | high"],
-            ["parser_model", "Parser backend", "docling"],
-            ["output_format", "Parser output style", "markdown | text"],
-            ["docling_options", "Override parser profile/OCR in code", "{ profile: 'balanced', ... }"],
-            ["max_token_num_each_node", "Split large nodes", "12000 or lower"],
-            ["max_page_num_each_node", "Split long page spans", "8 or lower"],
-            ["if_add_node_summary", "Cost vs summary coverage", "no | yes"]
-          ]
-        }
-      },
-      {
-        title: "Save tree and reuse in reasoning flow",
-        body: "Persist output then load for tree-search reasoning.",
+        title: "Save the tree and reuse it later",
+        body: "The unstructured flow still produces the same canonical tree and save/fetch workflow as the other wrappers.",
         language: "python",
         code: `from navexa import save_document_tree, fetch_document_tree
 
@@ -957,709 +1181,1284 @@ save_document_tree(result, "/absolute/path/out", write_tree=True, write_validati
 tree = fetch_document_tree("/absolute/path/out")`
       }
     ],
-    whyThisMatters: [
-      "Many real operational docs do not have reliable heading structure.",
-      "This mode gives you a practical fallback without custom preprocessing."
+    variablesTable: table(
+      ["Field", "Why you change it", "Typical values"],
+      [
+        ["parser_config.output_format", "Choose parser text style", "`text` or `markdown`"],
+        ["max_token_num_each_node", "Limit node token size", "12000 default, lower for tighter chunks"],
+        ["max_page_num_each_node", "Limit node page span", "8 default, lower for tighter chunks"],
+        ["mode", "Optional LLM sectioning path", "`no-llm` or `llm`"],
+        ["if_add_node_summary", "Keep or drop summaries", "`yes` or `no`"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Unstructured output excerpt",
+        body: "The wrapper still records the resolved parser config and effective mode like the other flows.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "document_type": "unstructured",
+    "requested_mode": "no-llm",
+    "effective_mode": "no-llm",
+    "parser_config": {
+      "name": "docling",
+      "output_format": "text",
+      "options": {
+        "profile": "fast_text"
+      }
+    }
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Forgetting to set `mode` explicitly",
-        fix: "Use `mode=\"no-llm\"` for deterministic runs, and `mode=\"llm\"` only when credentials/model are configured."
+        mistake: "Treating a heading-poor PDF as structured just because it has page titles",
+        fix: "If the document does not have a dependable hierarchy, start with the unstructured wrapper instead."
+      },
+      {
+        mistake: "Keeping very large node sizes by default on every long document",
+        fix: "Tune token and page limits when the text density is high and you want cleaner reasoning chunks."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Use text output when heading markup is not useful",
+        body: "Unlike structured and semi-structured flows, unstructured can genuinely benefit from `output_format=\"text\"`."
       }
     ],
     tryIt: [
-      "Run with `if_add_node_summary=no` first to reduce cost.",
-      "Then enable summaries and compare retrieval speed/readability."
+      "Run the same unstructured PDF once with `output_format=\"text\"` and once with `output_format=\"markdown\"`.",
+      "Lower `max_token_num_each_node` and inspect the resulting node granularity.",
+      "Save the tree and load it again with `fetch_document_tree`."
     ],
     nextSteps: [
-      {
-        title: "Transcript data",
-        body: "For calls/interviews, use transcript flow.",
-        to: "/docs/data-transcript"
-      }
+      next("Transcript data", "/docs/data-transcript"),
+      next("Save and Load Trees", "/docs/save-fetch")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "data-transcript",
-    navParentId: "indexing-modes",
     category: "Core concepts",
+    navParentId: "indexing-modes",
     title: "Transcript data",
     description:
-      "For conversation-style documents (calls/interviews). Navexa groups transcript nodes into topic sections with source-backed spans.",
-    whatYouBuild: [
-      "Topic-grouped transcript nodes with traceable source text spans.",
-      "A tree structure you can query with reasoning retrieval."
+      "Use this flow for calls, interviews, and conversation-heavy documents. Transcript indexing is the only indexing wrapper that is strictly LLM-required.",
+    whatThisPageIsFor: [
+      "Teach the transcript wrapper exactly as the current public API exposes it.",
+      "Make it clear that transcript indexing is LLM-required.",
+      "Separate transcript behavior from parser_config and Docling mental models."
     ],
-    prerequisites: ["Transcript-like input text/PDF", "LLM credentials configured"],
+    whenToUse: [
+      "Call transcripts, interview transcripts, meeting notes exported as PDF",
+      "Conversation-style documents where topic grouping matters more than headings",
+      "You want topic-level structure with traceable source text"
+    ],
+    prerequisites: [
+      "A transcript-style PDF",
+      "A working LLM provider configuration",
+      "An understanding that parser_config is not part of the public wrapper here"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Run transcript index",
-        body:
-          "Transcript flow is LLM-required. It uses the transcript text extractor path; `output_format` does not currently change transcript parsing.",
+        title: "Configure LLM first",
+        body: "Transcript is fail-fast when model or credentials are missing because current code marks it as LLM-required.",
+        language: "python",
+        code: `model_config = {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "api_key": "...",
+}`
+      },
+      {
+        title: "Run the transcript wrapper",
+        body: "Notice the public wrapper signature: no parser args are exposed here.",
         language: "python",
         code: `from navexa import index_transcript_document_tree
 
 result = index_transcript_document_tree(
     pdf_path="/absolute/path/transcript.pdf",
-    model="gpt-4.1-mini",   # Azure: deployment name
+    model_config=model_config,
     verbosity="medium",
-    if_add_node_summary="yes",
 )`
       },
       {
-        title: "Recommended transcript environment values",
-        body:
-          "Set transcript type and LLM provider values. Note: Docling output format/OCR flags are not used in transcript parsing path.",
-        language: "dotenv",
-        code: `NAVEXA_DOCUMENT_TYPE=transcript
-NAVEXA_LLM_PROVIDER=openai
-OPENAI_API_KEY=...
-OPENAI_MODEL_NAME=gpt-4.1-mini`
-      },
-      {
-        title: "Variables you usually change",
-        body:
-          "Only transcript inputs are listed here (`index_transcript_document_tree(...)`).",
-        table: {
-          headers: ["Parameter", "Why change it", "Common value"],
-          rows: [
-            ["pdf_path", "Input document location", "/absolute/path/transcript.pdf"],
-            ["model", "Choose model/deployment", "gpt-4.1-mini or Azure deployment"],
-            ["verbosity", "Debug depth", "low | medium | high"],
-            ["parser_model", "Parser backend", "docling"],
-            ["output_format", "Accepted for API parity; currently ignored in transcript parsing", "markdown or text"],
-            ["docling_options", "Ignored for transcript flow (uses transcript text extractor)", "None"],
-            ["max_token_num_each_node", "Split large topic nodes", "12000 or lower"],
-            ["max_page_num_each_node", "Split long page spans", "8 or lower"],
-            ["if_add_node_summary", "Cost vs summary coverage", "no | yes"],
-            ["transcript_topic_prompt_template", "Custom topic extraction prompt", "custom template string"]
-          ]
-        }
-      },
-      {
-        title: "Save + inspect topic structure",
-        body: "Check top-level topic titles and child node boundaries.",
+        title: "Save and inspect topic structure",
+        body: "The canonical tree still saves the same way, but transcript runs can also include a top-level \`transcript\` payload.",
         language: "python",
         code: `from navexa import save_document_tree
 
 saved = save_document_tree(
-    index_result=result,
+    result,
     out_dir="/absolute/path/out",
     write_tree=True,
     write_validation=True,
 )
+
 print(saved.paths["tree_navexa"])`
       }
     ],
-    whyThisMatters: [
-      "Transcript content is sequential and topic-shifting, unlike formal documents.",
-      "Topic grouping improves reasoning recall and answer grounding."
+    variablesTable: table(
+      ["Field", "Why you change it", "Typical values"],
+      [
+        ["pdf_path", "Input transcript PDF", "/absolute/path/transcript.pdf"],
+        ["model_config", "Required LLM path", "{ provider, model, api_key, base_url, pricing_model }"],
+        ["verbosity", "Runtime logging", "`low`, `medium`, `high`"],
+        ["max_token_num_each_node", "Topic chunk size budget", "12000 default"],
+        ["max_page_num_each_node", "Topic page span budget", "8 default"],
+        ["transcript_topic_prompt_template", "Advanced custom topic prompt", "custom string"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Transcript output excerpt",
+        body: "Current code marks transcript as LLM-required and can include an extra top-level transcript payload in the output.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "document_type": "transcript",
+    "llm_required": true,
+    "requested_mode": "llm",
+    "effective_mode": "llm",
+    "parser_config": null,
+    "warnings": []
+  },
+  "transcript": {
+    "topics": [
+      {
+        "topic": "Intro",
+        "summary": "Conversation opening"
+      }
+    ]
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Expecting `output_format` to change transcript parsing",
-        fix: "It currently does not affect transcript flow. Focus on `model`, `verbosity`, and `transcript_topic_prompt_template`."
+        mistake: "Expecting parser_config or Docling flags to change transcript behavior",
+        fix: "The transcript wrapper does not expose parser args in Python, and transcript CLI runs ignore parser config and legacy parser flags."
+      },
+      {
+        mistake: "Treating transcript as optional-LLM like the other wrappers",
+        fix: "Transcript is the exception. It requires a working model and credentials."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Customize transcript topic extraction",
+        body: "Use the prompt hook only when the default topic grouping is not good enough for your transcript family.",
+        language: "python",
+        code: `result = index_transcript_document_tree(
+    pdf_path="/absolute/path/transcript.pdf",
+    model_config=model_config,
+    transcript_topic_prompt_template="Custom transcript topic prompt...",
+)`
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Older transcript parameter tables are stale",
+        body: "If you see docs listing \`parser_model\`, \`output_format\`, or \`docling_options\` under the public transcript wrapper, treat those examples as outdated."
       }
     ],
     tryIt: [
-      "Open one topic node and verify source text continuity.",
-      "Ask two questions that require different topic branches."
+      "Run one transcript file with a working `model_config`.",
+      "Confirm `llm_required` is `true` in the saved output.",
+      "Do not copy parser examples from the other wrappers into the transcript wrapper."
     ],
     nextSteps: [
-      {
-        title: "Save and load trees",
-        body: "Persist and reload transcript trees safely.",
-        to: "/docs/save-fetch"
-      }
+      next("Parser Parameter Setup", "/docs/parser-setup"),
+      next("Save and Load Trees", "/docs/save-fetch")
     ]
   }),
-  withCoreToc({
+  createArticle({
+    id: "parser-setup",
+    category: "Core concepts",
+    title: "Parser Parameter Setup",
+    description:
+      "This section covers parser control for structured, semi-structured, and unstructured flows. Start with `parser_config`, then use environment defaults if you need shared runtime behavior, and keep legacy parser args only for compatibility.",
+    whatThisPageIsFor: [
+      "Explain parser settings without mixing them into transcript behavior.",
+      "Teach the recommended grouped parser_config shape before any legacy flat args.",
+      "Give one stable mental model for profile defaults, env defaults, and per-run overrides."
+    ],
+    whenToUse: [
+      "You are working with structured, semi-structured, or unstructured indexing.",
+      "You need to tune OCR, table extraction, image mode, or logging.",
+      "You want to know where parser defaults come from."
+    ],
+    prerequisites: [
+      "A non-transcript indexing wrapper",
+      "A decision on whether you want per-run config or shared env defaults",
+      "A willingness to keep legacy parser args at the end of your migration path"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
+      {
+        title: "Start with parser_config in the function call",
+        body: "This keeps parser behavior explicit at the same place where you call the wrapper.",
+        language: "python",
+        code: `${parserConfigCode}
+
+result = index_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    parser_config=parser_config,
+)`
+      },
+      {
+        title: "Use environment variables only for shared defaults",
+        body: "Environment values are helpful when many runs should inherit the same parser baseline."
+      },
+      {
+        title: "Keep legacy parser args only for migration work",
+        body: "Current code still accepts old flat parser args, but the modern grouped form is easier to understand and maintain."
+      }
+    ],
+    variablesTable: table(
+      ["parser_config key", "Meaning", "Example"],
+      [
+        ["name", "Parser backend name", "`docling`"],
+        ["output_format", "Parser text style", "`markdown` or `text`"],
+        ["options", "Docling options dictionary", "{ profile: 'balanced', do_ocr: true }"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Resolved parser metadata in output",
+        body: "Navexa writes both the grouped parser config and the resolved Docling options to the saved tree.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "parser_config": {
+      "name": "docling",
+      "output_format": "markdown",
+      "options": {
+        "profile": "balanced",
+        "do_ocr": true
+      }
+    },
+    "docling_options": {
+      "profile": "balanced",
+      "do_ocr": true
+    }
+  }
+}`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Teaching parser args on transcript pages",
+        fix: "Keep parser control scoped to structured, semi-structured, and unstructured flows."
+      },
+      {
+        mistake: "Starting with env defaults before you understand the per-run settings",
+        fix: "Learn `parser_config` first, then move repeated values into env defaults later."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Current merge order for Docling options",
+        body: "Resolved parser options come from profile defaults, then environment defaults, then explicit `parser_config.options` for the current call.",
+        language: "text",
+        code: `Docling option resolution:
+1. profile defaults
+2. NAVEXA_* parser env defaults
+3. parser_config["options"]`
+      }
+    ],
+    tryIt: [
+      "Write one minimal `parser_config` object and use it in a structured run.",
+      "Inspect the resolved parser metadata in `tree_navexa.json`.",
+      "Only then move repeated values into env defaults if you still need that."
+    ],
+    nextSteps: [
+      next("parser_config (recommended)", "/docs/parser-config"),
+      next("Environment variables", "/docs/parser-env")
+    ]
+  }),
+  createArticle({
+    id: "parser-config",
+    category: "Core concepts",
+    navParentId: "parser-setup",
+    title: "parser_config (recommended)",
+    description:
+      "Use grouped `parser_config` in new Python and CLI examples. Pick a Docling profile first, then override only the options you actually need.",
+    whatThisPageIsFor: [
+      "Show the current parser API shape for code and CLI.",
+      "Explain what `balanced`, `image_manual`, and `fast_text` actually mean.",
+      "Keep grouped parser config above old flat parser flags.",
+      "Document transcript exceptions without teaching parser control through transcript."
+    ],
+    whenToUse: [
+      "You want explicit parser behavior in code",
+      "You want a JSON config file for CLI runs",
+      "You are writing docs, notebooks, or team examples that should stay current"
+    ],
+    prerequisites: [
+      "A structured, semi-structured, or unstructured wrapper",
+      "A reason to control output format or Docling options"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
+      {
+        title: "Use parser_config directly in Python",
+        body: "This is the current recommended form for wrapper calls.",
+        language: "python",
+        code: `${parserConfigCode}
+
+result = index_unstructured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    parser_config=parser_config,
+)`
+      },
+      {
+        title: "Choose a profile as your starting point",
+        body: "A profile is a preset bundle of Docling defaults. `balanced` is the safe default for most PDFs, `image_manual` keeps picture description on, and `fast_text` turns OCR off and switches the backend to `onnxruntime` for faster digital-text parsing.",
+        language: "python",
+        code: `parser_config = {
+    "name": "docling",
+    "output_format": "markdown",
+    "options": {"profile": "fast_text"},
+}`
+      },
+      {
+        title: "Use --parser-config in CLI",
+        body: "The CLI matches the grouped API. You can pass inline JSON or a path to a JSON file.",
+        language: "bash",
+        code: `navexa-index
+  --pdf /absolute/path/document.pdf
+  --out-dir /absolute/path/out
+  --document-type structured
+  --mode no-llm
+  --parser-config /absolute/path/parser-config.json`
+      },
+      {
+        title: "Remember the structured and semi-structured markdown rule",
+        body: "If you request `output_format=\"text\"` for structured or semi-structured, current code warns and forces it back to markdown."
+      }
+    ],
+    variablesTable: table(
+      ["Field", "Meaning", "Notes"],
+      [
+        ["name", "Parser backend", "Currently `docling`"],
+        ["output_format", "Parser text style", "`markdown` or `text`"],
+        ["options.profile", "Starting Docling preset", "`balanced`, `image_manual`, `fast_text`"],
+        ["options", "Docling option dictionary", "profile and parser toggles live here"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "parser-config.json file",
+        body: "This is a clean CLI-friendly file format that mirrors the Python dictionary shape.",
+        language: "json",
+        code: cliParserConfigJson
+      },
+      {
+        title: "Resolved values when profile=`fast_text`",
+        body: "This is the actual resolved Docling state used by current Navexa code before any env or per-option overrides change it.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "parser_config": {
+      "name": "docling",
+      "output_format": "markdown",
+      "options": {
+        "profile": "fast_text",
+        "do_ocr": false,
+        "force_full_page_ocr": false,
+        "backend": "onnxruntime",
+        "do_table_structure": true,
+        "do_picture_description": false,
+        "enable_remote_services": false,
+        "image_mode": "placeholder",
+        "quiet": true
+      }
+    }
+  }
+}`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Trying to combine parser_config with old flat parser args in the same example",
+        fix: "Teach one path. Use `parser_config` first and move old flat args to a migration-only page."
+      },
+      {
+        mistake: "Passing parser config to transcript CLI runs and expecting it to matter",
+        fix: "Current transcript CLI warns that parser configuration is ignored."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "CLI accepts inline JSON or file paths",
+        body: "Use file paths once the config becomes long enough that inline shell JSON hurts readability."
+      },
+      {
+        title: "What each `options` property means",
+        body: "Use this when you want the plain-English meaning of each Docling option before overriding a profile.",
+        definitionGroups: [
+          {
+            lead: "Supported",
+            badge: "options",
+            trail: "properties:",
+            items: [
+              {
+                label: "profile",
+                description:
+                  "Chooses the starting Docling preset. Start here first, then override only the fields you need."
+              },
+              {
+                label: "do_ocr",
+                description:
+                  "Turns OCR on or off. Keep it on for scanned or image-based PDFs. Turn it off for clean digital-text PDFs."
+              },
+              {
+                label: "force_full_page_ocr",
+                description:
+                  "Forces OCR across the full page instead of relying only on existing extracted text. Useful for hard scans."
+              },
+              {
+                label: "do_table_structure",
+                description:
+                  "Preserves table structure instead of flattening tables into plain text. Keep this on for table-heavy documents."
+              },
+              {
+                label: "do_picture_description",
+                description:
+                  "Lets Docling generate picture descriptions. Useful for manuals, diagrams, and image-heavy documents."
+              },
+              {
+                label: "enable_remote_services",
+                description:
+                  "Allows remote enrichment services when the parser supports them. Leave this off unless you explicitly need that behavior."
+              },
+              {
+                label: "backend",
+                description:
+                  "Chooses the OCR runtime. `torch` is the default. `onnxruntime` is the lighter/faster path used by `fast_text`."
+              },
+              {
+                label: "image_mode",
+                description:
+                  "Controls how images are represented in markdown output. The default is `placeholder`."
+              },
+              {
+                label: "quiet",
+                description:
+                  "Reduces Docling and OCR log noise during normal runs. Keep this on unless you are actively debugging parser behavior."
+              }
+            ]
+          }
+        ],
+        moreDetails: [
+          {
+            title: "More about `image_mode` values",
+            definitionGroups: [
+              {
+                items: [
+                  {
+                    label: "placeholder",
+                    description: "Keeps lightweight placeholder markers for images in markdown output."
+                  },
+                  {
+                    label: "embedded",
+                    description: "Embeds image data directly into the markdown output."
+                  },
+                  {
+                    label: "referenced",
+                    description: "Keeps image references instead of embedding image payloads into the markdown."
+                  },
+                  {
+                    label: "none",
+                    description:
+                      "Requests no image rendering mode. Current Navexa code still normalizes unsupported values safely."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            title: "More about option resolution order",
+            body: "Navexa resolves Docling options in this order: profile defaults, then `NAVEXA_*` parser environment values, then explicit `parser_config.options` values for the current call."
+          }
+        ]
+      },
+      {
+        title: "Built-in Docling profiles",
+        body: "Treat profiles as starting presets, not fixed modes. These are the resolved defaults before env overrides or explicit option overrides. All three profiles keep `image_mode=placeholder` by default.",
+        table: table(
+          [
+            "Setting",
+            profileHeader("balanced", "default", "balanced"),
+            profileHeader("image_manual", "images", "image"),
+            profileHeader("fast_text", "speed", "fast")
+          ],
+          [
+            [
+              "Best for",
+              "Most documents",
+              "Image-heavy manuals and decks",
+              "Clean digital-text PDFs when you want faster parsing"
+            ],
+            [
+              "OCR",
+              boolCell(true),
+              boolCell(true),
+              boolCell(false)
+            ],
+            [
+              "Full-page OCR",
+              boolCell(true),
+              boolCell(true),
+              boolCell(false)
+            ],
+            [
+              "Table extraction",
+              boolCell(true),
+              boolCell(true),
+              boolCell(true)
+            ],
+            [
+              "Picture description",
+              boolCell(false),
+              boolCell(true),
+              boolCell(false)
+            ],
+            [
+              "Backend",
+              codeCell("torch"),
+              codeCell("torch"),
+              codeCell("onnxruntime")
+            ],
+            [
+              "Image mode",
+              codeCell("placeholder"),
+              codeCell("placeholder"),
+              codeCell("placeholder")
+            ],
+            [
+              "Remote services",
+              boolCell(false),
+              boolCell(false),
+              boolCell(false)
+            ],
+            [
+              "Quiet",
+              boolCell(true),
+              boolCell(true),
+              boolCell(true)
+            ]
+          ],
+          { variant: "comparison" }
+        )
+      },
+      {
+        title: "Profile first, override second",
+        body: "For example, if you choose `fast_text` but still want OCR, keep the profile and override only that one field.",
+        language: "python",
+        code: `parser_config = {
+    "name": "docling",
+    "output_format": "markdown",
+    "options": {
+        "profile": "fast_text",
+        "do_ocr": True,
+    },
+}`
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Legacy parser aliases still exist",
+        body: "Current code still tolerates old parser concepts for compatibility, including `docling_options` aliases inside some parser configs, but new examples should stay grouped and simple."
+      }
+    ],
+    tryIt: [
+      "Run the same PDF once with `balanced` and once with `fast_text`.",
+      "Inspect `pipeline.parser_config.options` in the saved tree.",
+      "Then override one option manually so you can see the profile-plus-override pattern."
+    ],
+    nextSteps: [
+      next("Environment variables", "/docs/parser-env"),
+      next("Legacy parser args (deprecated)", "/docs/parser-legacy")
+    ]
+  }),
+  createArticle({
+    id: "parser-env",
+    category: "Core concepts",
+    navParentId: "parser-setup",
+    title: "Environment variables",
+    description:
+      "Use parser environment variables only when you want shared defaults across runs. Keep function-level parser_config as the main teaching path and use env defaults as a second layer.",
+    whatThisPageIsFor: [
+      "Show the current parser env defaults clearly and without mixing them into every example.",
+      "Explain how parser env defaults interact with parser_config.",
+      "Document the env loading path used by Navexa."
+    ],
+    whenToUse: [
+      "You want the same parser defaults in many terminal runs",
+      "You share a notebook or shell environment with one parser baseline",
+      "You want parser_config to stay short because only a few values differ per run"
+    ],
+    prerequisites: [
+      "A reason to share parser defaults across runs",
+      "A `.env` or shell environment you control",
+      "A non-transcript wrapper"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
+      {
+        title: "Set parser defaults in env",
+        body: "These values act as defaults. Explicit parser_config still wins for the current call.",
+        language: "bash",
+        code: `export NAVEXA_PARSER_MODEL=docling
+export NAVEXA_DOCLING_OUTPUT_FORMAT=markdown
+export NAVEXA_DOCLING_PROFILE=balanced
+export NAVEXA_DOCLING_OCR=1
+export NAVEXA_DOCLING_TABLE_STRUCTURE=1
+export NAVEXA_DOCLING_IMAGE_MODE=placeholder
+export NAVEXA_DOCLING_QUIET=1`
+      },
+      {
+        title: "Let Navexa load env files automatically",
+        body: "Current env loading order is explicit `NAVEXA_ENV_FILE`, then a cwd `.env`, then the repo-local `.env` for backward compatibility.",
+        language: "python",
+        code: `from navexa import load_navexa_env
+
+load_navexa_env()`
+      },
+      {
+        title: "Override only what changes per run",
+        body: "Keep the env defaults stable, then override a few parser values directly in parser_config when needed.",
+        language: "python",
+        code: `result = index_structured_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    parser_config={
+        "name": "docling",
+        "output_format": "markdown",
+        "options": {"profile": "fast_text"},
+    },
+)`
+      }
+    ],
+    variablesTable: table(
+      ["Env var", "Meaning", "Default"],
+      [
+        ["NAVEXA_PARSER_MODEL", "Parser backend", "`docling`"],
+        ["NAVEXA_DOCLING_OUTPUT_FORMAT", "Parser text style", "`markdown`"],
+        ["NAVEXA_DOCLING_PROFILE", "Docling profile", "`balanced`"],
+        ["NAVEXA_DOCLING_OCR", "OCR toggle", "`1`"],
+        ["NAVEXA_DOCLING_FORCE_FULL_PAGE_OCR", "Full page OCR", "`1`"],
+        ["NAVEXA_RAPIDOCR_BACKEND", "OCR backend", "`torch`"],
+        ["NAVEXA_DOCLING_TABLE_STRUCTURE", "Table extraction", "`1`"],
+        ["NAVEXA_DOCLING_PICTURE_DESCRIPTION", "Picture description", "`0`"],
+        ["NAVEXA_DOCLING_REMOTE_SERVICES", "Remote services", "`0`"],
+        ["NAVEXA_DOCLING_IMAGE_MODE", "Image rendering mode", "`placeholder`"],
+        ["NAVEXA_DOCLING_QUIET", "Reduce parser noise", "`1`"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Resolved parser output after env + parser_config",
+        body: "The tree shows the final resolved state, not just the env values you set.",
+        language: "json",
+        code: `{
+  "parser_config": {
+    "name": "docling",
+    "output_format": "markdown",
+    "options": {
+      "profile": "fast_text",
+      "do_ocr": false,
+      "quiet": true
+    }
+  }
+}`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Assuming env defaults override explicit parser_config",
+        fix: "Current code treats env as defaults. Explicit parser_config options still win for the current run."
+      },
+      {
+        mistake: "Hiding every parser decision in env variables",
+        fix: "Use env for shared defaults, not as a replacement for readable examples."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Use NAVEXA_ENV_FILE when one project needs a dedicated env file",
+        body: "This keeps parser defaults and model defaults in one explicit place."
+      }
+    ],
+    tryIt: [
+      "Set one parser env baseline.",
+      "Override only one value in parser_config for the next run.",
+      "Inspect the resolved parser output in the saved tree."
+    ],
+    nextSteps: [
+      next("Legacy parser args (deprecated)", "/docs/parser-legacy"),
+      next("Save and Load Trees", "/docs/save-fetch")
+    ]
+  }),
+  createArticle({
+    id: "parser-legacy",
+    category: "Core concepts",
+    navParentId: "parser-setup",
+    title: "Legacy parser args (deprecated)",
+    description:
+      "These arguments still exist so older code and scripts can keep running, but they should not lead new examples. Use this page only when you are migrating older Navexa calls.",
+    whatThisPageIsFor: [
+      "Map older flat parser arguments to the grouped parser_config path.",
+      "Show the remaining compatibility behavior without making it the main teaching path.",
+      "Give migration guidance for older CLI scripts."
+    ],
+    whenToUse: [
+      "You are updating an older notebook or script",
+      "You need to understand why current code still accepts flat parser fields",
+      "You are migrating a shell script that still uses older CLI flags"
+    ],
+    prerequisites: [
+      "A reason to keep older parser calls working while you migrate them",
+      "An understanding of the grouped parser_config path first"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
+      {
+        title: "Map old Python args to parser_config",
+        body: "Read the left side as compatibility-only and the right side as the preferred grouped path.",
+        table: table(
+          ["Old field", "Preferred replacement"],
+          [
+            ["parser_model", "parser_config.name"],
+            ["output_format", "parser_config.output_format"],
+            ["docling_options", "parser_config.options"]
+          ]
+        )
+      },
+      {
+        title: "Map old CLI flags to --parser-config",
+        body: "The current CLI still accepts flat parser flags, but they are now compatibility shorthands rather than the preferred teaching path.",
+        table: table(
+          ["Legacy CLI flag", "Preferred grouped path"],
+          [
+            ["--parser-model", "--parser-config JSON"],
+            ["--output-format", "--parser-config JSON"],
+            ["--docling-profile", "--parser-config JSON"],
+            ["--docling-ocr", "--parser-config JSON"],
+            ["--docling-table-structure", "--parser-config JSON"]
+          ]
+        )
+      },
+      {
+        title: "Know what happens when new and old parser args mix",
+        body: "If `--parser-config` is present, current CLI warns that old parser flags are ignored. When `parser_config` is provided in Python, legacy parser args are deprecated and ignored."
+      }
+    ],
+    sampleOutput: [
+      {
+        title: "Compatibility warning examples",
+        body: "These warnings are expected when migration code still mixes old and new parser paths.",
+        language: "text",
+        code: `DeprecationWarning: parser_model, output_format, and docling_options are deprecated.
+UserWarning: --parser-config was provided, so legacy parser flags are ignored.`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Continuing to teach flat parser args in new examples",
+        fix: "Keep them on migration pages only. Teach parser_config first everywhere else."
+      },
+      {
+        mistake: "Expecting old parser flags to change transcript runs",
+        fix: "Current transcript CLI warns that parser configuration is ignored."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Migrate page by page, not all at once",
+        body: "It is fine to keep compatibility code temporarily while you convert examples to grouped parser_config."
+      }
+    ],
+    tryIt: [
+      "Pick one old notebook cell or script.",
+      "Replace flat parser args with parser_config.",
+      "Remove the compatibility path once the new version works."
+    ],
+    nextSteps: [
+      next("Save and Load Trees", "/docs/save-fetch"),
+      next("Compatibility and Deprecated", "/docs/compatibility-deprecated")
+    ]
+  }),
+  createArticle({
     id: "save-fetch",
     category: "Core concepts",
     title: "Save and Load Trees",
     description:
-      "Indexing returns memory-first results. Persist only the artifacts your workflow actually needs.",
-    whatYouBuild: [
-      "A clean output contract for apps, QA pipelines, and debugging.",
-      "A reload pattern for tree, validation, and compatibility artifacts."
+      "Save the canonical tree first, add validation when needed, keep compat output only for legacy consumers, and use the fetch helpers to reload trees from dicts, files, or output folders.",
+    whatThisPageIsFor: [
+      "Show the current save and fetch workflow for canonical Navexa outputs.",
+      "Keep `tree_navexa.json` clearly above compatibility-only artifacts.",
+      "Explain which helper returns which object."
+    ],
+    whenToUse: [
+      "You want to persist indexing output",
+      "You want to pass saved trees into reasoning later",
+      "You need to reload a tree from a directory, file path, or result object"
     ],
     prerequisites: [
-      "A completed `IndexResult` object",
-      "Read/write access to output directory"
+      "An `IndexResult` from one of the indexing wrappers",
+      "An output directory path if you want explicit save locations"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Save canonical output",
-        body:
-          "Always keep `tree_navexa.json` as the primary contract. If `out_dir=None`, Navexa saves to `<pdf_dir>/<pdf_stem>_navexa_out`.",
+        title: "Save the canonical tree first",
+        body: "This should be the default artifact for nearly every workflow.",
         language: "python",
         code: `from navexa import save_document_tree
 
 saved = save_document_tree(
-    index_result=result,
+    index_result,
     out_dir="/absolute/path/out",
     write_tree=True,
-    write_validation=True,
+    write_validation=False,
     write_compat=False,
 )`
       },
       {
-        title: "See what the output JSON looks like (sample)",
-        body:
-          "This is a simplified sample of `tree_navexa.json` so you can quickly understand what fields exist and what they contain.",
-        language: "json",
-        code: `{
-  "doc_id": "sample_manual",
-  "doc_name": "sample_manual",
-  "pages": { "count": 113 },
-  "pipeline_version": "v1",
-  "source": {
-    "pdf_path": "/absolute/path/sample_manual.pdf",
-    "sha256": "db2f733a418567a0050bcc8f5ba526c5ccc12904db786353859995620cf326a1",
-    "total_pages": 113
-  },
-  "cost": {
-    "pricing_model": "gpt-4.1",
-    "tier": "standard",
-    "calls": 186,
-    "input_tokens": 187963,
-    "cached_input_tokens": 5632,
-    "output_tokens": 26120,
-    "total_tokens": 214083,
-    "estimated_cost_usd": 0.587702
-  },
-  "pipeline": {
-    "mode": "synthetic_table_of_contents",
-    "table_of_contents_pages": [],
-    "table_of_contents_entries": [
-      { "structure": "Preface", "title": "Preface", "page": null, "physical_index": 5 },
-      { "structure": "1", "title": "Introduction", "page": null, "physical_index": 8 }
-    ],
-    "verify_accuracy": 0.9812,
-    "verify_incorrect_count": 3,
-    "llm_pipeline_enabled": true,
-    "steps": ["extract", "outline", "segment", "summarize"],
-    "document_type": "structured",
-    "summary_enabled": true,
-    "max_token_num_each_node": 12000,
-    "max_page_num_each_node": 8,
-    "llm_required": false,
-    "requested_mode": "llm",
-    "effective_mode": "llm",
-    "verbosity": "high",
-    "parser_model": "docling",
-    "output_format": "markdown"
-  },
-  "structure": [
-    {
-      "node_id": "0001",
-      "title": "PREFACE / FRONT MATTER",
-      "start_index": 1,
-      "end_index": 4,
-      "level": 0,
-      "exclusive_text": "Front matter text only.",
-      "full_text": "Front matter text only.",
-      "children": [],
-      "summary": "Front matter overview."
-    },
-    {
-      "node_id": "0002",
-      "title": "1 INTRODUCTION",
-      "start_index": 8,
-      "end_index": 12,
-      "level": 1,
-      "exclusive_text": "Introduction text only.",
-      "full_text": "Introduction text + all child sections.",
-      "children": [
-        {
-          "node_id": "0003",
-          "title": "1.1 Scope",
-          "start_index": 8,
-          "end_index": 9,
-          "level": 2,
-          "exclusive_text": "Scope paragraph text.",
-          "full_text": "Scope paragraph text.",
-          "children": [],
-          "summary": "Scope definition."
-        }
-      ],
-      "summary": "Introduction summary."
-    }
-  ]
-}`
+        title: "Add validation when you want quality signals",
+        body: "Validation is optional but helpful when you are comparing parser settings or document families.",
+        language: "python",
+        code: `saved = save_document_tree(
+    index_result,
+    out_dir="/absolute/path/out",
+    write_tree=True,
+    write_validation=True,
+)`
       },
       {
-        title: "Full key definitions (single table)",
-        body:
-          "Use this right after opening `tree_navexa.json`. This is the single source of truth for what each key means.",
-        table: {
-          headers: ["Key path", "Type", "Meaning (simple)"],
-          rows: [
-            ["doc_id", "string", "Internal ID of this indexed document"],
-            ["doc_name", "string", "Human-readable document name"],
-            ["pages.count", "int", "How many pages Navexa saw"],
-            ["source.pdf_path", "string", "Original PDF location used in this run"],
-            ["source.sha256", "string", "File hash for traceability/version matching"],
-            ["source.total_pages", "int", "Total page count from source metadata"],
-            ["cost.pricing_model", "string", "Pricing model name used for cost estimation"],
-            ["cost.calls", "int", "How many LLM calls were made"],
-            ["cost.total_tokens", "int", "Total tokens consumed in this run"],
-            ["cost.estimated_cost_usd", "float", "Estimated LLM cost for this run"],
-            ["pipeline.mode", "string", "TOC processing path used by the pipeline"],
-            ["pipeline.document_type", "string", "Which indexing flow was used"],
-            ["pipeline.requested_mode", "string", "Mode you asked for (`llm` or `no-llm`)"],
-            ["pipeline.effective_mode", "string", "Mode actually used after checks"],
-            ["pipeline.table_of_contents_pages", "array[int]", "Detected TOC pages (can be empty)"],
-            ["pipeline.table_of_contents_entries", "array", "Detected/generated TOC rows used to build structure"],
-            ["pipeline.verify_accuracy", "float", "TOC verification confidence/accuracy score"],
-            ["pipeline.summary_enabled", "bool", "Whether summaries were generated"],
-            ["structure", "array[node]", "Main nodes you query in retrieval/QA"],
-            ["structure[].node_id", "string", "Unique node identifier"],
-            ["structure[].title", "string", "Node heading/title"],
-            ["structure[].level", "int", "Depth in hierarchy (0 = top)"],
-            ["structure[].start_index / end_index", "int", "Page span for the node"],
-            ["structure[].exclusive_text", "string", "Only this node’s own text"],
-            ["structure[].full_text", "string", "This node + descendants (inclusive text)"],
-            ["structure[].children", "array[node]", "Sub-sections under this node"],
-            ["structure[].summary", "string", "Short summary of node content"]
-          ]
-        }
-      },
-      {
-        title: "Also see validation output (sample)",
-        body:
-          "This is a simplified `validation_report.json` sample so you know how to quickly judge output quality.",
-        language: "json",
-        code: `{
-  "generated_at": "2026-03-02T11:12:15.000000+00:00",
-  "pipeline_version": "v1",
-  "metrics": {
-    "node_count": 161,
-    "heading_anchor_match_rate": 0.94,
-    "overlap_violations": 0,
-    "duplicated_block_rate": 0.0,
-    "preface_included": true,
-    "preface_pages": 4,
-    "nodes_split": 2,
-    "parts_created": 5,
-    "summary_coverage": 1.0,
-    "empty_node_rate": 0.03
-  }
-}`,
-        table: {
-          headers: ["Key path", "Type", "Meaning (simple)"],
-          rows: [
-            ["generated_at", "string (ISO datetime)", "When the validation report was created"],
-            ["pipeline_version", "string", "Validation/schema version for compatibility"],
-            ["metrics", "object", "All quality metrics for this run"],
-            ["metrics.node_count", "int", "Total number of nodes in output tree"],
-            ["metrics.heading_anchor_match_rate", "float (0..1)", "How well headings were anchored to source text"],
-            ["metrics.overlap_violations", "int", "Count of invalid overlapping spans (target is 0)"],
-            ["metrics.duplicated_block_rate", "float (0..1)", "How much duplicated block ownership exists (target near 0)"],
-            ["metrics.preface_included", "bool", "Whether preface/front matter was included"],
-            ["metrics.preface_pages", "int", "How many pages were treated as preface/front matter"],
-            ["metrics.nodes_split", "int", "How many oversized nodes were split"],
-            ["metrics.parts_created", "int", "How many split part nodes were created"],
-            ["metrics.summary_coverage", "float (0..1)", "Fraction of nodes that have summary text"],
-            ["metrics.empty_node_rate", "float (0..1)", "Fraction of nodes with empty/near-empty text"]
-          ]
-        }
-      },
-      {
-        title: "Save function signature (reference)",
-        body: "This is the full function signature. Most users keep `save_mode` at the default.",
-        language: "text",
-        code: `save_document_tree(index_result, out_dir=None, save_mode="explicit", write_tree=True, write_validation=False, write_compat=False)`
-      },
-      {
-        title: "Understand save flags (reference)",
-        body: "You must enable at least one write flag. Keep compat output off unless you need it.",
-        table: {
-          headers: ["Flag", "What it writes", "Typical use"],
-          rows: [
-            ["write_tree", "tree_navexa.json (canonical)", "Always"],
-            ["write_validation", "validation_report.json", "Development + QA"],
-            ["write_compat", "tree_legacy_compat.json", "Only for legacy consumers"]
-          ]
-        }
-      },
-      {
-        title: "Fetch tree and reports",
-        body: "You can load from an output directory, a JSON file path, or an in-memory object.",
+        title: "Fetch tree, validation, and compat artifacts later",
+        body: "The fetch helpers accept a dict, a file path, a directory path, or result objects where appropriate.",
         language: "python",
         code: `from navexa import fetch_document_tree, fetch_validation_report, fetch_compat_tree
 
 tree = fetch_document_tree("/absolute/path/out")
 validation = fetch_validation_report("/absolute/path/out")
-compat = fetch_compat_tree("/absolute/path/out")  # optional`
+compat = fetch_compat_tree("/absolute/path/out")`
       },
       {
-        title: "Supported fetch sources (quick guide)",
-        body: "These are all valid inputs for `fetch_document_tree(...)`.",
-        language: "text",
-        code: `source can be:
-- in-memory dict (tree JSON)
-- JSON file path
-- output directory path
-- IndexResult object`
+        title: "Use the one-call index-and-save helper when it truly helps readability",
+        body: "This keeps indexing and saving together when you already know both belong in the same example.",
+        language: "python",
+        code: `from navexa import index_and_save_document_tree
+
+index_result, save_result = index_and_save_document_tree(
+    pdf_path="/absolute/path/document.pdf",
+    out_dir="/absolute/path/out",
+    mode="no-llm",
+    write_tree=True,
+    write_validation=True,
+)`
       }
     ],
-    whyThisMatters: [
-      "Saving less data keeps your storage and versioning cleaner.",
-      "Reloading from canonical files prevents accidental schema drift."
+    variablesTable: table(
+      ["Flag or helper", "Meaning", "Default or behavior"],
+      [
+        ["write_tree", "Write `tree_navexa.json`", "True"],
+        ["write_validation", "Write `validation_report.json`", "False"],
+        ["write_compat", "Write `tree_legacy_compat.json`", "False"],
+        ["fetch_document_tree", "Load canonical tree", "dict, file, dir, or IndexResult"],
+        ["fetch_validation_report", "Load validation report if present", "dict, file, dir, or IndexResult"],
+        ["fetch_compat_tree", "Load legacy compat tree if present", "dict, file, dir, or IndexResult"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "SaveResult",
+        body: "The save helper returns where artifacts were written.",
+        language: "json",
+        code: `{
+  "out_dir": "/absolute/path/out",
+  "paths": {
+    "tree_navexa": "/absolute/path/out/tree_navexa.json",
+    "validation_report": "/absolute/path/out/validation_report.json"
+  }
+}`
+      },
+      {
+        title: "Canonical file list",
+        body: "Teach these in this order: tree first, validation second, compat last.",
+        language: "text",
+        code: `tree_navexa.json
+validation_report.json
+tree_legacy_compat.json  # only when explicitly enabled`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Assuming compat output is always required",
-        fix: "Enable compatibility only for legacy consumers."
+        mistake: "Treating the compat tree as the default output",
+        fix: "Use `tree_navexa.json` as the canonical output and enable compat only for legacy consumers."
+      },
+      {
+        mistake: "Calling save_document_tree with every write flag disabled",
+        fix: "Current code raises because at least one artifact must be enabled."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Default output directory behavior",
+        body: "If you do not pass `out_dir`, current code derives a directory from the source PDF path or doc id."
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Compat output is migration-only",
+        body: "Keep `write_compat` and `tree_legacy_compat.json` out of new tutorials unless you are explicitly helping users migrate older consumers."
       }
     ],
     tryIt: [
-      "Save with and without `write_compat`.",
-      "Inspect directory contents and compare file size + fields."
+      "Save a run with tree + validation.",
+      "Reload both artifacts with the fetch helpers.",
+      "Only enable compat on a second run if you truly need it."
     ],
     nextSteps: [
-      {
-        title: "Reasoning retrieval workflow",
-        body: "Use saved trees to select nodes and generate grounded answers.",
-        to: "/docs/reasoning"
-      }
+      next("Reasoning Retrieval Workflow", "/docs/reasoning"),
+      next("Output Schema (Canonical)", "/docs/output-schema")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "reasoning",
     category: "Core concepts",
     title: "Reasoning Retrieval Workflow",
     description:
-      "Use this as the main entry page. Then open each subsection in the left sidebar to learn every function with arguments, outputs, and examples.",
-    whatYouBuild: [
-      "A complete tree-based QA flow that is grounded in node-level context.",
-      "A clear understanding of every reasoning function and its parameters."
+      "Navexa reasoning is tree-first, traceable, and vectorless. Build a search view, select nodes with an LLM, extract context from those nodes, and answer only from that context.",
+    whatThisPageIsFor: [
+      "Explain the end-to-end reasoning workflow without forcing users into the densest child pages first.",
+      "Keep current reasoning APIs above compatibility guidance.",
+      "Show the relationship between the tree, reasoning result, context bundle, answer result, and full RAG result."
+    ],
+    whenToUse: [
+      "You already have a Navexa tree and want grounded question answering",
+      "You want traceable node selection before generating an answer",
+      "You want a lighter alternative to vector-based RAG pipelines"
     ],
     prerequisites: [
-      "A loaded `tree_navexa` object",
-      "LLM key for tree reasoning and answer generation"
+      "A saved or in-memory `tree_navexa` document",
+      "LLM configuration for reasoning",
+      "A clear question you want answered against that tree"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Open the reasoning subsections (left sidebar)",
-        body:
-          "This page is the overview. Use the subsection pages under this item to learn each function in detail.",
-        table: {
-          headers: ["Subsection", "What you learn", "Main functions"],
-          rows: [
-            ["Build tree view and node index", "Prepare tree input for reasoning", "build_search_tree_view, build_node_index"],
-            ["Select nodes with LLM", "How node selection works", "reason_over_tree, print_reasoning_trace"],
-            ["Extract context and answer", "Context strategy + grounded answer", "extract_selected_context, answer_from_context"],
-            ["One-call helper", "Run full flow in one function", "run_reasoning_rag"],
-            ["Custom prompt define", "Override built-in prompt templates safely", "prompt_template, tree_prompt_template, answer_prompt_template"],
-            ["Custom LLM define", "Plug your own external adapter", "llm_callable, BaseExternalLLM"]
-          ]
-        }
+        title: "Load the canonical tree",
+        body: "The fetch helper is a simple way to normalize a saved tree before reasoning.",
+        language: "python",
+        code: `from navexa import fetch_document_tree
+
+tree = fetch_document_tree("/absolute/path/out")`
       },
       {
-        title: "Quick one-call example",
-        body: "Use this first, then open subsection pages for deeper control.",
+        title: "Run the full one-call reasoning flow",
+        body: "This is the fastest current-first path. Use the child pages later when you want deeper control.",
         language: "python",
-        code: `from navexa import run_reasoning_rag, print_reasoning_trace
+        code: `from navexa import run_reasoning_rag
 
 rag = run_reasoning_rag(
-    query="What are the key warnings?",
-    tree_or_source="/absolute/path/out",
-    model=None,
-    return_prompt=True,
-    verbosity="medium",
+    query="What parser settings does this run use?",
+    tree_or_source=tree,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
 )
 
-print_reasoning_trace(rag.reasoning, rag.node_index)
-print("\\nAnswer:\\n", rag.answer.answer)`
+print(rag.answer.answer)`
       },
       {
-        title: "Terminal output example",
-        body:
-          "In notebooks, `[NAVEXA]` lines are runtime logs (usually tinted). Plain lines are your actual values/returns.",
-        language: "text",
-        code: `[NAVEXA][INFO] [step] build search tree view
-[NAVEXA][INFO] [step] llm tree reasoning
-[NAVEXA][DEBUG] [llm_search] model=gpt-4.1-mini
-[NAVEXA][INFO] [step] extract context from selected nodes
-[NAVEXA][INFO] [step] generate grounded answer
-[NAVEXA][DEBUG] [answer] usage_delta={'calls': 1, 'input_tokens': 10539, 'output_tokens': 951, 'total_tokens': 11490, 'estimated_cost_usd': 0.028686}
-
-reason_over_tree: ok
-node_list: ['0055', '0056', '0057']
-extract_selected_context: ok
-context chars: 39627
-answer_from_context: ok
-answer:
-... grounded answer text ...`
+        title: "Inspect the result object instead of guessing",
+        body: "The one-call helper returns the tree, tree view, node index, reasoning result, context bundle, answer, and usage deltas together.",
+        language: "python",
+        code: `print(rag.reasoning.node_list)
+print(rag.context.node_records)
+print(rag.cost_delta)`
       }
     ],
-    whyThisMatters: [
-      "You keep retrieval explainable: selected nodes are visible and auditable.",
-      "You can scale from simple one-call usage to fully custom prompt/provider control."
+    variablesTable: table(
+      ["Field", "Meaning", "Typical values"],
+      [
+        ["tree_or_source", "Tree dict, file path, directory path, or saved result source", "dict or output directory"],
+        ["model_config", "LLM configuration for reasoning", "{ provider, model, api_key, base_url, pricing_model }"],
+        ["text_mode", "Whether extracted context uses inclusive or exclusive text", "`inclusive` or `exclusive`"],
+        ["dedupe_ancestor", "Drop redundant child/parent overlaps in selection", "True by default"],
+        ["return_prompt", "Return rendered prompt text in result objects", "False by default"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "RAGResult shape",
+        body: "The one-call helper keeps every stage result together so you can debug or inspect without re-running the full pipeline.",
+        language: "json",
+        code: ragResultSample
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Trying to learn all functions from one long page",
-        fix: "Use the subsection pages; each page focuses on one part of the flow."
+        mistake: "Trying reasoning before the tree itself is trustworthy",
+        fix: "Validate the indexing output first. Reasoning quality cannot rescue a broken tree."
+      },
+      {
+        mistake: "Treating reasoning as a black box",
+        fix: "Inspect `rag.reasoning`, `rag.context`, and `rag.cost_delta` after each run."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Use step-by-step functions when you want full control",
+        body: "The child pages show how to split tree search, context extraction, and answer generation into separate calls."
+      },
+      {
+        title: "Use prompt customization and external adapters only after the default flow is stable",
+        body: "Custom prompts and `BaseExternalLLM` are powerful, but they should not be the first explanation users read."
       }
     ],
     tryIt: [
-      "Start with subsection 1 and continue in order to subsection 5.",
-      "Run one query after each subsection to see what changed."
+      "Load one saved tree and ask a simple grounded question.",
+      "Inspect the selected node ids and context records.",
+      "Only then move into prompt or adapter customization."
     ],
     nextSteps: [
-      {
-        title: "1) Build tree view and node index",
-        body: "Prepare stable search input before LLM selection.",
-        to: "/docs/reasoning-tree-view-index"
-      },
-      {
-        title: "CLI commands",
-        body: "Move your workflow from notebook experiments to repeatable CLI runs.",
-        to: "/docs/cli"
-      }
+      next("Build tree view and node index", "/docs/reasoning-tree-view-index"),
+      next("One-call helper", "/docs/reasoning-end-to-end")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "reasoning-tree-view-index",
-    navParentId: "reasoning",
     category: "Core concepts",
+    navParentId: "reasoning",
     title: "Build tree view and node index",
-    description: "This subsection prepares your tree for reasoning and node lookup.",
-    whatYouBuild: [
-      "A stripped tree view for safe prompting.",
-      "A fast node_id -> node metadata map for display and lookup."
+    description:
+      "These two helpers prepare the tree for reasoning: one creates a lighter prompt-safe search view, and the other builds a convenient node lookup map.",
+    whatThisPageIsFor: [
+      "Show the exact role of `build_search_tree_view` and `build_node_index`.",
+      "Make the prompt input and inspection input easy to understand.",
+      "Keep tree preparation separate from node selection and answer generation."
     ],
-    prerequisites: ["A loaded tree object from `fetch_document_tree(...)`"],
+    whenToUse: [
+      "You want to inspect the reasoning input",
+      "You want a separate node lookup for debugging or UI work",
+      "You are using the step-by-step reasoning path instead of the one-call helper"
+    ],
+    prerequisites: [
+      "A normalized Navexa tree document",
+      "A question you want to answer later"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Function: build_search_tree_view",
-        body:
-          "Use this for EDA/inspection. It keeps the same tree shape as saved output, but removes fields you specify so you can inspect structure cleanly.",
+        title: "Build the search tree view",
+        body: "This strips heavy text fields by default so the LLM sees structure, summaries, titles, and node ids rather than the full raw text body.",
         language: "python",
         code: `from navexa import build_search_tree_view
 
-tree_view = build_search_tree_view(
-    tree,
-    strip_fields=("exclusive_text", "full_text"),
-)
-print("build_search_tree_view: ok")
-print("tree_view keys:", list(tree_view.keys()))
-print()`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["tree", "dict", "Navexa tree document containing `structure`"],
-            ["strip_fields", "Sequence[str]", "Any keys you want removed while keeping the original hierarchy (example: exclusive_text/full_text)"]
-          ]
-        }
+tree_view = build_search_tree_view(tree)
+print("search_tree_ready")`
       },
       {
-        title: "Output: build_search_tree_view (inspection view)",
-        body:
-          "You still get a full tree document (`doc_id`, `pipeline`, `structure`, etc.). Only requested fields are removed. You can print the whole JSON to inspect hierarchy.",
-        language: "text",
-        code: `build_search_tree_view: ok
-tree_view keys: ['doc_id', 'doc_name', 'pages', 'pipeline_version', 'source', 'cost', 'pipeline', 'structure']`
-      },
-      {
-        title: "Function: build_node_index (light payload for LLM)",
-        body:
-          "Use this to create a compact node map. With `exclude_fields`, you can remove heavy metadata/text and send a clean node list + summaries to LLM.",
+        title: "Build the node index",
+        body: "This gives you a node_id keyed map with page ranges, titles, summaries, and text fields for later context extraction or trace printing.",
         language: "python",
         code: `from navexa import build_node_index
 
-node_index_light = build_node_index(
-    tree,
-    include_page_ranges=True,
-    exclude_fields={
-        "exclusive_text",
-        "full_text",
-        "start_index",
-        "end_index",
-    },
-)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["tree", "dict", "Navexa tree document"],
-            ["include_page_ranges", "bool", "Adds readable `page_index` like `39-40`"],
-            ["exclude_fields", "Sequence[str] | None", "Drops selected keys from each mapped node (best for smaller LLM payloads)"]
-          ]
-        }
-      },
-      {
-        title: "Output: build_node_index (light node map)",
-        body:
-          "This output is ideal for reasoning prompts: concise node metadata + summary without long body text.",
-        language: "text",
-        code: `build_node_index: ok
-node_index_light keys(sample): ['0001', '0002', '0003']
-node_index_light['0001']:
-{
-  'node_id': '0001',
-  'title': 'PREFACE / FRONT MATTER',
-  'summary': 'The ARIA Guide Low-Grade Glioma Adapted Management Guideline ...',
-  'level': 0,
-  'page_index': '1-4',
-  'parent_id': None,
-  'children': []
-}`
+node_index = build_node_index(tree, include_page_ranges=True)
+print(node_index["0001.0001"]["title"])`
       }
     ],
-    whyThisMatters: [
-      "A clean prompt tree reduces model confusion and token usage.",
-      "Node index makes downstream display and debugging simple."
+    variablesTable: table(
+      ["Function field", "Meaning", "Default"],
+      [
+        ["strip_fields", "Fields removed from tree view", "`exclusive_text`, `full_text`"],
+        ["include_page_ranges", "Whether page_index is derived for node index rows", "True"],
+        ["exclude_fields", "Fields removed from node index rows", "None"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Search tree view example",
+        body: "Use this to understand what the reasoning model actually sees.",
+        language: "json",
+        code: searchTreeViewSample
+      },
+      {
+        title: "Node index example",
+        body: "Use this to debug retrieved node ids or build your own downstream tooling.",
+        language: "json",
+        code: nodeIndexSample
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Passing huge raw text fields in tree prompt",
-        fix: "Use `strip_fields` to remove `exclusive_text` and `full_text` before reasoning."
+        mistake: "Passing a directory path straight into `build_search_tree_view`",
+        fix: "Load the tree first. These helpers expect a tree object, not a saved-path source."
+      },
+      {
+        mistake: "Confusing tree view and node index",
+        fix: "The tree view is prompt input. The node index is a lookup table for later inspection and context extraction."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Exclude extra fields from the node index when you need a lighter payload",
+        body: "Use `exclude_fields` if you are moving the index into another system and do not want every field."
       }
     ],
     tryIt: [
-      "Print first 3 keys of `node_index` and inspect one row.",
-      "Change `strip_fields` and compare prompt size."
+      "Build both structures from one saved tree.",
+      "Compare what each helper returns.",
+      "Use them in the next reasoning step."
     ],
     nextSteps: [
-      {
-        title: "Select nodes with LLM",
-        body: "Run reasoning to get `thinking` and `node_list`.",
-        to: "/docs/reasoning-select-nodes"
-      }
+      next("Select nodes with LLM", "/docs/reasoning-select-nodes"),
+      next("Extract context and generate answer", "/docs/reasoning-context-answer")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "reasoning-select-nodes",
-    navParentId: "reasoning",
     category: "Core concepts",
+    navParentId: "reasoning",
     title: "Select nodes with LLM",
-    description: "This subsection covers node selection and trace printing.",
-    whatYouBuild: [
-      "An LLM selection step that returns reasoning + candidate nodes.",
-      "A readable trace for human verification."
+    description:
+      "Use `reason_over_tree` to pick the node ids most likely to answer a question, and `print_reasoning_trace` to inspect what the model selected.",
+    whatThisPageIsFor: [
+      "Explain the selection stage clearly and separately from answer generation.",
+      "Show the current accepted types for prompt customization and external adapters.",
+      "Keep the result object shape explicit."
     ],
-    prerequisites: ["tree object", "LLM credentials", "optional node_index for printing"],
+    whenToUse: [
+      "You want to select relevant nodes before extracting context",
+      "You want to inspect the reasoning output directly",
+      "You are using the step-by-step reasoning path"
+    ],
+    prerequisites: [
+      "A normalized tree object",
+      "LLM configuration or a `BaseExternalLLM` adapter",
+      "Optionally a node index for pretty trace printing"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Function: reason_over_tree",
-        body:
-          "Run reasoning with a light node map (or the full tree document), then use `print_reasoning_trace(...)` for readable output.",
+        title: "Run reason_over_tree",
+        body: "This stage uses the search tree view and asks the model to return only node ids plus brief reasoning.",
         language: "python",
         code: `from navexa import reason_over_tree
-from navexa import print_reasoning_trace, build_node_index
 
-node_index_light = build_node_index(
-    tree,
-    include_page_ranges=True,
-    exclude_fields={
-        "exclusive_text",
-        "full_text",
-        "start_index",
-        "end_index",
+reasoning = reason_over_tree(
+    query="Which parser settings were used?",
+    tree=tree,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
     },
 )
 
-reasoning = reason_over_tree(
-    query="What are key launch risks?",
-    tree=node_index_light,
-    model=None,
-    prompt_template=None,
-    llm_callable=None,
-    return_prompt=True,
-    verbosity="high",
-    strip_fields=("exclusive_text", "full_text"),
-    prompt_extra=None,
-)
-
-print_reasoning_trace(reasoning, node_index_light)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["query", "str", "User question for retrieval"],
-            ["tree", "dict", "Input for selection (tree or light node map, based on your workflow)"],
-            ["model", "str | None", "Model/deployment override"],
-            ["prompt_template", "str | callable | None", "Custom tree-search prompt template"],
-            ["llm_callable", "BaseExternalLLM | None", "External adapter override (optional)"],
-            ["return_prompt", "bool", "Include used prompt in output"],
-            ["verbosity", "str | None", "low/medium/high"],
-            ["strip_fields", "Sequence[str]", "Fields removed before tree prompt"],
-            ["prompt_extra", "dict | None", "Extra template payload"]
-          ]
-        }
+print(reasoning.node_list)`
       },
       {
-        title: "Function: print_reasoning_trace",
-        body: "Print model thinking and selected nodes with titles/pages.",
+        title: "Print a readable trace",
+        body: "This is useful when you want page ranges and titles next to the selected node ids.",
         language: "python",
-        code: `from navexa import print_reasoning_trace, build_node_index
+        code: `from navexa import build_node_index, print_reasoning_trace
 
-node_index = build_node_index(tree, include_page_ranges=True)
-print_reasoning_trace(reasoning, node_index)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["reasoning_result", "TreeReasoningResult | dict", "Result from reason_over_tree"],
-            ["node_index", "dict", "node_id mapped metadata for readable output"]
-          ]
-        }
-      },
-      {
-        title: "Notebook output example",
-        body:
-          "The first block is Navexa logs, then your printed values (`thinking`, `node_list`, and prompt length).",
-        language: "text",
-        code: `[NAVEXA][INFO] [step] build search tree view
-[NAVEXA][INFO] [step] llm tree reasoning
-[NAVEXA][DEBUG] [llm_search] model=gpt-4.1-mini
-[NAVEXA][DEBUG] [llm_search] usage_delta={'calls': 1, 'input_tokens': 105109, 'output_tokens': 323, 'total_tokens': 105432, 'estimated_cost_usd': 0.212802}
-
-reason_over_tree: ok
-thinking: The question focuses on extracting detailed guideline information ...
-node_list: ['0055', '0056', '0057', '0077', '0091', '0148', '0149', '0150', '0151', '0152', '0153', '0154']
-raw_response: {"thinking":"...","node_list":["0055","0056", "..."]}
-used_prompt chars: 446720`
+node_index = build_node_index(tree)
+print_reasoning_trace(reasoning, node_index)`
       }
     ],
-    whyThisMatters: [
-      "Node selection quality directly controls answer quality.",
-      "Trace output helps you debug retrieval decisions quickly."
+    variablesTable: table(
+      ["Field", "Meaning", "Typical values"],
+      [
+        ["query", "User question", "plain language question"],
+        ["model_config", "Current preferred LLM config path", "{ provider, model, api_key, base_url, pricing_model }"],
+        ["prompt_template", "String or callable prompt override", "optional"],
+        ["llm_callable", "External adapter instance", "`BaseExternalLLM` subclass instance"],
+        ["prompt_extra", "Extra JSON payload for prompt policy", "dict or null"],
+        ["return_prompt", "Return rendered prompt in result", "False by default"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "TreeReasoningResult",
+        body: "This is the object returned by `reason_over_tree`.",
+        language: "json",
+        code: reasoningResultSample
+      },
+      {
+        title: "Trace output",
+        body: "The printed trace is a debugging aid, not the canonical returned object.",
+        language: "text",
+        code: `Reasoning Process:
+The answer is likely in the parser configuration section.
+
+Retrieved Nodes:
+Node ID: 0001.0002   Page: 4-5   Title: parser_config`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Passing `node_index` to `reason_over_tree`",
-        fix: "Pass `tree` to reasoning; use `node_index` only for printing/lookup."
+        mistake: "Passing a plain function as `llm_callable`",
+        fix: "Current runtime supports adapter instances only. Use a `BaseExternalLLM` subclass instance."
+      },
+      {
+        mistake: "Expecting reason_over_tree to return extracted text",
+        fix: "It returns selected node ids and reasoning. Context extraction is the next step."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Use prompt_extra for structured policy hints",
+        body: "If your template contains `{extra_json}`, Navexa fills it. If it does not, Navexa appends a dedicated JSON section automatically."
       }
     ],
     tryIt: [
-      "Ask one narrow and one broad query; compare node_list sizes.",
-      "Enable `return_prompt=True` and inspect prompt payload."
+      "Run one reasoning query and inspect the node ids.",
+      "Print the reasoning trace against a node index.",
+      "Move on to context extraction next."
     ],
     nextSteps: [
-      {
-        title: "Extract context and generate answer",
-        body: "Convert selected nodes into grounded answer context.",
-        to: "/docs/reasoning-context-answer"
-      }
+      next("Extract context and generate answer", "/docs/reasoning-context-answer"),
+      next("One-call helper", "/docs/reasoning-end-to-end")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "reasoning-context-answer",
-    navParentId: "reasoning",
     category: "Core concepts",
+    navParentId: "reasoning",
     title: "Extract context and generate answer",
-    description: "This subsection explains context extraction and grounded answer generation.",
-    whatYouBuild: [
-      "A context bundle from selected nodes.",
-      "A final answer constrained to selected context."
+    description:
+      "Once you have node ids, extract grounded text from those nodes and send only that text into answer generation.",
+    whatThisPageIsFor: [
+      "Explain the boundary between node selection and answer generation.",
+      "Show the current `ContextBundle` and `AnswerResult` return shapes.",
+      "Teach the context controls that matter most for grounded output."
     ],
-    prerequisites: ["tree object", "reasoning.node_list", "LLM credentials for answer stage"],
+    whenToUse: [
+      "You already have selected node ids",
+      "You want to inspect extracted context before generating an answer",
+      "You want more control than the one-call helper gives you"
+    ],
+    prerequisites: [
+      "A tree object",
+      "A list of selected node ids",
+      "LLM configuration or external adapter for the answer stage"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Function: extract_selected_context",
-        body: "Control how much text to include from selected nodes.",
+        title: "Extract grounded context",
+        body: "This step selects text from the chosen nodes and optionally removes redundant child nodes when their parent is already selected.",
         language: "python",
         code: `from navexa import extract_selected_context
 
@@ -1668,1116 +2467,1088 @@ context = extract_selected_context(
     node_list=reasoning.node_list,
     text_mode="inclusive",
     dedupe_ancestor=True,
-)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["tree", "dict", "Navexa tree document"],
-            ["node_list", "Sequence[str]", "Selected node ids"],
-            ["text_mode", "str", "`inclusive` uses full_text, `exclusive` uses exclusive_text"],
-            ["dedupe_ancestor", "bool", "Drop child nodes when parent also selected"]
-          ]
-        }
+)
+
+print(context.node_records)`
       },
       {
-        title: "Output: extract_selected_context",
-        body: "Notebook-style output for context extraction.",
-        language: "text",
-        code: `extract_selected_context: ok
-selected: ['0055', '0056', '0057', '0077', '0091', '0148', '0149', '0150', '0151', '0152', '0153', '0154']
-dropped: []
-missing: []
-context chars: 39627
-context preview:
-Table 9. Stratum B: Patients with Relapsed or Progressive LGG with Symptoms ...`
-      },
-      {
-        title: "Function: answer_from_context",
-        body: "Generate final answer using only extracted context.",
+        title: "Generate the final answer from context only",
+        body: "This stage should answer strictly from the extracted context, not from the whole tree.",
         language: "python",
         code: `from navexa import answer_from_context
 
 answer = answer_from_context(
-    query="What are key launch risks?",
+    query="Which parser settings were used?",
     context_text=context.text,
-    model=None,
-    prompt_template=None,
-    llm_callable=None,
-    return_prompt=True,
-    verbosity="medium",
-    prompt_extra=None,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
 )
 
-print(answer.answer)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["query", "str", "User question"],
-            ["context_text", "str", "Retrieved context text"],
-            ["model", "str | None", "Model/deployment override"],
-            ["prompt_template", "str | callable | None", "Custom answer prompt template"],
-            ["llm_callable", "BaseExternalLLM | None", "External adapter override (optional)"],
-            ["return_prompt", "bool", "Include used prompt in result"],
-            ["verbosity", "str | None", "low/medium/high"],
-            ["prompt_extra", "dict | None", "Extra template payload"]
-          ]
-        }
-      },
-      {
-        title: "Output: answer_from_context",
-        body: "Notebook-style logs and returned answer.",
-        language: "text",
-        code: `[NAVEXA][INFO] [step] generate grounded answer
-[NAVEXA][DEBUG] [answer] model=gpt-4.1-mini
-[NAVEXA][DEBUG] [answer] prompt_preview=Answer the question based only on the context...
-[NAVEXA][DEBUG] [answer] usage_delta={'calls': 1, 'input_tokens': 10539, 'cached_input_tokens': 0, 'output_tokens': 951, 'total_tokens': 11490, 'estimated_cost_usd': 0.028686}
-
-answer_from_context: ok
-answer:
-Guidelines: ARIA Guide Low-Grade Glioma Adapted Management Guideline: Version 1.4
-...
-used_prompt chars: 446720`
+print(answer.answer)`
       }
     ],
-    whyThisMatters: [
-      "You control context size and hierarchy behavior explicitly.",
-      "Grounded context reduces hallucination risk."
+    variablesTable: table(
+      ["Field", "Meaning", "Typical values"],
+      [
+        ["text_mode", "Which text field is used for extraction", "`inclusive` or `exclusive`"],
+        ["dedupe_ancestor", "Drop redundant descendants when parent already selected", "True"],
+        ["prompt_template", "String or callable answer prompt override", "optional"],
+        ["prompt_extra", "Extra JSON payload appended or injected into answer prompt", "dict or null"],
+        ["llm_callable", "External adapter instance for answer stage", "`BaseExternalLLM` subclass instance"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "ContextBundle",
+        body: "This is the object returned by `extract_selected_context`.",
+        language: "json",
+        code: contextBundleSample
+      },
+      {
+        title: "AnswerResult",
+        body: "The answer stage returns the final grounded answer plus the raw model output.",
+        language: "json",
+        code: `{
+  "answer": "The run used the balanced Docling profile with markdown output.",
+  "raw_response": "The run used the balanced Docling profile with markdown output.",
+  "used_prompt": null
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Using `exclusive` for broad policy questions",
-        fix: "Use `inclusive` when parent + child context is needed."
+        mistake: "Skipping context inspection and blaming answer quality first",
+        fix: "Look at `context.node_records` and `context.text` before tuning the final prompt."
+      },
+      {
+        mistake: "Using `exclusive` text when you actually need the full inherited node context",
+        fix: "Start with `inclusive` unless you have a clear reason to limit the context to exclusive text."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Use step-by-step reasoning when you want different adapters for search and answer",
+        body: "The one-call helper uses one adapter argument. The split path lets you call `reason_over_tree` and `answer_from_context` with different adapter instances if you need that."
       }
     ],
     tryIt: [
-      "Run with `inclusive` and `exclusive`; compare answer completeness.",
-      "Toggle `dedupe_ancestor` and compare context length."
+      "Run extraction once with `inclusive` text mode and once with `exclusive`.",
+      "Compare the node records and answer quality.",
+      "Keep the text mode that matches your grounding needs."
     ],
     nextSteps: [
-      {
-        title: " One-call helper",
-        body: "Run complete reasoning in one function.",
-        to: "/docs/reasoning-end-to-end"
-      }
+      next("One-call helper", "/docs/reasoning-end-to-end"),
+      next("Custom prompt define", "/docs/reasoning-custom-prompt")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "reasoning-end-to-end",
-    navParentId: "reasoning",
     category: "Core concepts",
+    navParentId: "reasoning",
     title: "One-call helper: run_reasoning_rag",
-    description: "This subsection shows the fastest full workflow with all major knobs.",
-    whatYouBuild: [
-      "One-call reasoning + answer execution.",
-      "A full result object with tree, context, answer, and cost delta."
+    description:
+      "Use `run_reasoning_rag` when you want the full search -> context -> answer workflow in one call while still keeping every intermediate result available for inspection.",
+    whatThisPageIsFor: [
+      "Teach the simplest end-to-end reasoning API.",
+      "Show the returned `RAGResult` object clearly.",
+      "Keep one-call convenience above customization and migration detail."
     ],
-    prerequisites: ["Tree source (dict, file, or output dir)", "LLM setup"],
+    whenToUse: [
+      "You want the shortest working reasoning example",
+      "You still want access to every intermediate result object afterward",
+      "You do not need separate adapters per stage"
+    ],
+    prerequisites: [
+      "A tree or saved output path",
+      "LLM configuration for reasoning"
+    ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Function: run_reasoning_rag",
-        body: "Single call for tree reasoning + context extraction + answer generation.",
+        title: "Run the one-call helper",
+        body: "Pass the query, tree source, and model_config. Navexa handles search, selection, context extraction, answer generation, and cost deltas.",
         language: "python",
-        code: `from navexa import run_reasoning_rag, print_reasoning_trace
+        code: `from navexa import run_reasoning_rag
 
 rag = run_reasoning_rag(
-    query="What are the key warnings?",
+    query="Which parser settings does this run use?",
     tree_or_source="/absolute/path/out",
-    model=None,
-    tree_prompt_template=None,
-    answer_prompt_template=None,
-    llm_callable=None,
-    return_prompt=True,
-    verbosity="high",
-    strip_fields=("exclusive_text", "full_text"),
-    text_mode="inclusive",
-    dedupe_ancestor=True,
-    tree_prompt_extra=None,
-    answer_prompt_extra=None,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
 )
 
-print_reasoning_trace(rag.reasoning, rag.node_index)
-print(rag.answer.answer)
-print(rag.cost_delta)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["query", "str", "User question"],
-            ["tree_or_source", "Any", "Tree dict, JSON path, or output directory"],
-            ["model", "str | None", "Model/deployment override"],
-            ["tree_prompt_template", "str | callable | None", "Custom tree-search prompt template"],
-            ["answer_prompt_template", "str | callable | None", "Custom answer prompt template"],
-            ["llm_callable", "BaseExternalLLM | None", "External adapter override (optional)"],
-            ["return_prompt", "bool", "Include prompt text in outputs"],
-            ["verbosity", "str | None", "low/medium/high"],
-            ["strip_fields", "Sequence[str]", "Fields removed in tree prompt view"],
-            ["text_mode", "str", "inclusive | exclusive"],
-            ["dedupe_ancestor", "bool", "Drop descendant nodes when ancestor selected"],
-            ["tree_prompt_extra", "dict | None", "Extra payload for tree prompt"],
-            ["answer_prompt_extra", "dict | None", "Extra payload for answer prompt"]
-          ]
-        }
-      },
-      {
-        title: "Output object fields",
-        body: "Main fields inside returned `RAGResult`.",
-        table: {
-          headers: ["Field", "Meaning"],
-          rows: [
-            ["tree", "Loaded normalized tree object"],
-            ["tree_view", "Prompt-stripped tree view"],
-            ["node_index", "node_id -> metadata map"],
-            ["reasoning", "Thinking + node_list result"],
-            ["context", "Extracted context bundle"],
-            ["answer", "Final grounded answer object"],
-            ["cost_before / cost_after / cost_delta", "Usage tracking around this run"]
-          ]
-        }
-      },
-      {
-        title: "Terminal output example",
-        body:
-          "One-call output has the same pattern: first runtime logs, then readable values from `print_reasoning_trace(...)` and `rag.answer.answer`.",
-        language: "text",
-        code: `[NAVEXA][INFO] [step] build search tree view
-[NAVEXA][INFO] [step] llm tree reasoning
-[NAVEXA][INFO] [step] extract context from selected nodes
-[NAVEXA][INFO] [step] generate grounded answer
-[NAVEXA][INFO] [result] retrieved_nodes=12 context_chars=39627
-[NAVEXA][INFO] [result] answer_generated=yes
-
-Reasoning Process:
-The question focuses on treatment sections for relapsed/progressive disease...
-
-Retrieved Nodes:
-Node ID: 0055   Page: 39-40   Title: Stratum B ...
-Node ID: 0056   Page: 40-41   Title: Stratum C ...
-...
-
-Answer:
-... grounded answer text ...
-
-Cost delta:
-{'calls': 2, 'input_tokens': 115648, 'cached_input_tokens': 0, 'output_tokens': 1274, 'total_tokens': 116922, 'estimated_cost_usd': 0.241488}`
-      }
-    ],
-    whyThisMatters: [
-      "Great default for production endpoints and notebooks.",
-      "You still keep control over context policy and prompts."
-    ],
-    commonMistakes: [
-      {
-        mistake: "Passing an invalid source path to tree_or_source",
-        fix: "Use a tree dict, exact JSON file path, or output directory path."
-      }
-    ],
-    tryIt: [
-      "Run once with `text_mode=inclusive`, once with `exclusive`.",
-      "Inspect `cost_delta` and answer length."
-    ],
-    nextSteps: [
-      {
-        title: "Custom prompt define",
-        body: "Create your own prompt templates for tree selection and answer generation.",
-        to: "/docs/reasoning-custom-prompt"
-      },
-      {
-        title: "Custom LLM define",
-        body: "Plug your own external LLM adapter (BaseExternalLLM).",
-        to: "/docs/reasoning-custom-llm"
-      }
-    ]
-  }),
-  withCoreToc({
-    id: "reasoning-custom-prompt",
-    navParentId: "reasoning",
-    category: "Core concepts",
-    title: "Custom prompt define",
-    description:
-      "Use your own prompt templates for tree selection and answer generation, while keeping Navexa workflow and output format.",
-    whatYouBuild: [
-      "Custom tree-selection prompt behavior.",
-      "Custom answer style/policy using your own prompt text."
-    ],
-    prerequisites: ["Reasoning flow working with default prompts"],
-    steps: [
-      {
-        title: "Custom prompt in reason_over_tree",
-        body:
-          "Use `prompt_template` to override the tree-selection prompt. Use `prompt_extra` to pass policy/config JSON.",
-        language: "python",
-        code: `from navexa import reason_over_tree
-
-custom_tree_prompt = """
-You are a strict node selector.
-Question: {query}
-Tree: {tree_json}
-Constraints: {extra_json}
-Return JSON:
-{"thinking":"...", "node_list":["0001"]}
-"""
-
-reasoning = reason_over_tree(
-    query="What are key warnings?",
-    tree=tree,
-    model="gpt-4.1-mini",
-    prompt_template=custom_tree_prompt,
-    prompt_extra={"max_nodes": 3, "must_include_terms": ["warning", "precaution"]},
-    return_prompt=True,
-)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["prompt_template", "str | callable | None", "Custom tree-search template"],
-            ["prompt_extra", "dict | None", "Extra JSON payload injected into template"],
-            ["return_prompt", "bool", "Return the exact prompt used (`used_prompt`)"]
-          ]
-        }
-      },
-      {
-        title: "Custom prompt in answer_from_context",
-        body:
-          "Use `prompt_template` to enforce answer style and safety rules. Use `prompt_extra` for dynamic controls.",
-        language: "python",
-        code: `from navexa import answer_from_context
-
-answer_template = """
-Answer only from context.
-Question: {query}
-Context: {context}
-Policy: {extra_json}
-"""
-
-answer = answer_from_context(
-    query="What are key warnings?",
-    context_text=context.text,
-    model="gpt-4.1-mini",
-    prompt_template=answer_template,
-    prompt_extra={"style": "bullet", "max_points": 5},
-    return_prompt=True,
-)
-print(answer.answer)`,
-        table: {
-          headers: ["Variable", "Type", "Description"],
-          rows: [
-            ["prompt_template", "str | callable | None", "Custom answer template"],
-            ["prompt_extra", "dict | None", "Extra answer policy payload"],
-            ["return_prompt", "bool", "Return final rendered answer prompt"]
-          ]
-        }
-      },
-      {
-        title: "Custom prompts in one-call run_reasoning_rag",
-        body:
-          "Set separate templates for tree and answer stages in one call.",
-        language: "python",
-        code: `from navexa import run_reasoning_rag
-
-rag = run_reasoning_rag(
-    query="What are key warnings?",
-    tree_or_source=tree,
-    tree_prompt_template=custom_tree_prompt,
-    answer_prompt_template=answer_template,
-    tree_prompt_extra={"max_nodes": 3},
-    answer_prompt_extra={"style": "short"},
-    return_prompt=True,
-)
-print(rag.reasoning.used_prompt)
-print(rag.answer.used_prompt)`
-      }
-    ],
-    whyThisMatters: [
-      "Prompt customization helps align outputs to your domain and review policy.",
-      "You can tune behavior without changing Navexa internals."
-    ],
-    commonMistakes: [
-      {
-        mistake: "Forgetting required placeholders",
-        fix: "Include `{query}` + `{tree_json}` in tree prompt and `{query}` + `{context}` in answer prompt."
-      }
-    ],
-    tryIt: [
-      "Run once with default prompts, then with your custom templates.",
-      "Compare `used_prompt` and node selection quality."
-    ],
-    nextSteps: [
-      {
-        title: "Custom LLM define",
-        body: "Now plug your own external adapter with `llm_callable`.",
-        to: "/docs/reasoning-custom-llm"
-      }
-    ]
-  }),
-  withCoreToc({
-    id: "reasoning-custom-llm",
-    navParentId: "reasoning",
-    category: "Core concepts",
-    title: "Custom LLM define",
-    description:
-      "Use your own model/provider by passing `llm_callable` as a `BaseExternalLLM` adapter (adapter-only).",
-    whatYouBuild: [
-      "A provider-agnostic reasoning + answer workflow using your own backend.",
-      "A predictable interface for both `tree_search` and `answer_generation` stages."
-    ],
-    prerequisites: ["Custom provider endpoint or SDK", "Basic reasoning flow already tested"],
-    steps: [
-      {
-        title: "Internal vs external LLM",
-        body:
-          "Navexa reasoning APIs (`reason_over_tree`, `answer_from_context`, `run_reasoning_rag`) support two paths: internal provider client or an external adapter.",
-        bullets: [
-          "Internal LLM client: used when `llm_callable` is not provided.",
-          "External adapter: used when you pass `llm_callable=...`.",
-          "`llm_callable` must be an instance of `BaseExternalLLM` (adapter-only)."
-        ]
-      },
-      {
-        title: "Required interface",
-        body:
-          "Use `BaseExternalLLM` and implement `invoke(prompt=..., model=..., stage=...)`.",
-        bullets: [
-          "Stage values passed by Navexa: `tree_search` and `answer_generation`.",
-          "Allowed return types from `invoke(...)`: `str`, `dict`, or `list`.",
-          "For `tree_search`, return JSON with `thinking` and `node_list`."
-        ],
-        language: "json",
-        code: `{
-  "thinking": "short reasoning",
-  "node_list": ["0001", "0003"]
-}`
-      },
-      {
-        title: "Stage values (what Navexa passes)",
-        body: "Navexa passes a `stage` string so your adapter can route behavior.",
-        language: "json",
-        code: `{
-  "tree_search": "Choose node IDs relevant to query",
-  "answer_generation": "Generate final grounded answer"
-}`
-      },
-      {
-        title: "Allowed return types",
-        body:
-          "Your adapter can return `str`, `dict`, or `list`. Navexa normalizes to a string (dict/list are serialized to JSON).",
-        language: "json",
-        code: `{
-  "allowed_return_types": ["str", "dict", "list"],
-  "tree_search_recommended_shape": {
-    "thinking": "short reasoning",
-    "node_list": ["0001", "0003"]
-  }
-}`
-      },
-      {
-        title: "Azure adapter example",
-        body:
-          "Azure OpenAI often requires using your deployment name as `model`. This adapter also parses JSON for `tree_search` reliably.",
-        language: "python",
-        code: `import os
-import json
-import re
-from openai import OpenAI
-from navexa import BaseExternalLLM
-
-class AzureOpenAILLM(BaseExternalLLM):
-    def __init__(self, *, deployment_name=None, api_key=None, base_url=None, timeout=60.0):
-        super().__init__(
-            provider="azure",
-            default_model=deployment_name or os.getenv("AZURE_DEPLOYMENT_NAME"),
-        )
-        api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY")
-        base_url = base_url or os.getenv("AZURE_OPENAI_BASE_URL")
-        if not api_key or not base_url:
-            raise ValueError("Set AZURE_OPENAI_API_KEY and AZURE_OPENAI_BASE_URL.")
-        if "openai.azure.com" in base_url and "/openai/" not in base_url:
-            base_url = base_url.rstrip("/") + "/openai/v1"
-        self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
-
-    def invoke(self, *, prompt: str, model: str, stage: str):
-        resp = self.client.chat.completions.create(
-            model=model,  # Azure deployment name
-            temperature=0,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = (resp.choices[0].message.content or "").strip()
-        if stage == "tree_search":
-            try:
-                return json.loads(text)
-            except Exception:
-                m = re.search(r"\\{[\\s\\S]*\\}", text)
-                if m:
-                    try:
-                        return json.loads(m.group(0))
-                    except Exception:
-                        pass
-                return {"thinking": "", "node_list": []}
-        return text`,
-        bullets: [
-          "Required env: `AZURE_OPENAI_API_KEY`",
-          "Required env: `AZURE_OPENAI_BASE_URL` (example: `https://<resource>.openai.azure.com/openai/v1`)",
-          "Required env: `AZURE_DEPLOYMENT_NAME`"
-        ]
-      },
-      {
-        title: "One-call usage",
-        body:
-          "Use `run_reasoning_rag(...)` to do: tree search -> context extraction -> answer generation.",
-        language: "python",
-        code: `from navexa import run_reasoning_rag
-
-llm = AzureOpenAILLM()
-
-rag = run_reasoning_rag(
-    query="What are key warnings?",
-    tree_or_source=tree,
-    llm_callable=llm,
-    model=None,  # uses adapter default_model
-)
 print(rag.answer.answer)`
       },
       {
-        title: "Step-by-step usage (different adapters per stage)",
-        body:
-          "If you want different deployment names/providers for node selection vs final answer, call stages manually.",
+        title: "Inspect the staged outputs",
+        body: "The helper still returns everything you need to debug the run later.",
         language: "python",
-        code: `from navexa import reason_over_tree, extract_selected_context, answer_from_context
-
-search_llm = AzureOpenAILLM(deployment_name="search-deploy")
-answer_llm = AzureOpenAILLM(deployment_name="answer-deploy")
-
-reasoning = reason_over_tree(
-    query="What are key warnings?",
-    tree=tree,
-    llm_callable=search_llm,
-)
-
-context = extract_selected_context(
-    tree=tree,
-    node_list=reasoning.node_list,
-    text_mode="inclusive",
-    dedupe_ancestor=True,
-)
-
-answer = answer_from_context(
-    query="What are key warnings?",
-    context_text=context.text,
-    llm_callable=answer_llm,
-)
-print(answer.answer)`
-      },
-      {
-        title: "Provider router adapter (OpenAI/Azure/Claude/Gemini)",
-        body:
-          "If you want one adapter that can call multiple providers, use a router and keep credentials in env vars.",
-        language: "python",
-        code: `import os
-from navexa import BaseExternalLLM
-
-class RouterLLM(BaseExternalLLM):
-    def __init__(self, provider: str, default_model: str | None = None):
-        super().__init__(provider=provider, default_model=default_model)
-
-    def invoke(self, *, prompt: str, model: str, stage: str):
-        if self.provider in {"openai", "azure"}:
-            from openai import OpenAI
-            kwargs = {"api_key": os.getenv("OPENAI_API_KEY")}
-            if self.provider == "azure":
-                kwargs = {
-                    "api_key": os.getenv("AZURE_OPENAI_API_KEY"),
-                    "base_url": os.getenv("AZURE_OPENAI_BASE_URL"),
-                }
-            client = OpenAI(**kwargs)
-            resp = client.chat.completions.create(
-                model=model,
-                temperature=0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return resp.choices[0].message.content or ""
-
-        if self.provider == "claude":
-            import anthropic
-            client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-            resp = client.messages.create(
-                model=model,
-                max_tokens=1200,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return "".join(
-                block.text for block in resp.content
-                if getattr(block, "type", "") == "text"
-            )
-
-        if self.provider == "gemini":
-            from google import genai
-            client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-            resp = client.models.generate_content(model=model, contents=prompt)
-            return getattr(resp, "text", "") or ""
-
-        raise ValueError(f"Unsupported provider: {self.provider}")`
-      },
-      {
-        title: "Inspect prompts while debugging external LLM",
-        body:
-          "Set `return_prompt=True` to inspect exactly what Navexa sent to your adapter.",
-        language: "python",
-        code: `from navexa import reason_over_tree, run_reasoning_rag
-
-llm = AzureOpenAILLM()
-
-reasoning = reason_over_tree(
-    query="What are key warnings?",
-    tree=tree,
-    llm_callable=llm,
-    return_prompt=True,
-)
-print(reasoning.used_prompt)
-
-rag = run_reasoning_rag(
-    query="What are key warnings?",
-    tree_or_source=tree,
-    llm_callable=llm,
-    return_prompt=True,
-)
-print(rag.reasoning.used_prompt)
-print(rag.answer.used_prompt)`
-      },
-      {
-        title: "Migration note",
-        body:
-          "Function-style `llm_callable` is no longer supported. Use `BaseExternalLLM` for all external integrations.",
-        bullets: [
-          "If you pass a function, Navexa will raise a `TypeError`.",
-          "Create an adapter class and implement `invoke(...)`."
-        ]
-      },
-      {
-        title: "Practical notes",
-        body: "Small rules of thumb that prevent confusing failures in production.",
-        bullets: [
-          "If `llm_callable` is provided, Navexa uses it and does not call the internal provider client for reasoning steps.",
-          "Keep `temperature=0` in your backend calls for stable node selection behavior.",
-          "Never hardcode secrets in source files; use environment variables."
-        ]
+        code: `print(rag.reasoning.node_list)
+print(rag.context.node_records)
+print(rag.cost_delta)`
       }
     ],
-    whyThisMatters: [
-      "You can integrate Navexa with any internal or third-party LLM stack.",
-      "Separation by `stage` lets you use different logic per step."
+    variablesTable: table(
+      ["Field", "Meaning", "Typical values"],
+      [
+        ["tree_or_source", "Tree dict or saved source", "dict, file, or output directory"],
+        ["tree_prompt_template", "Prompt override for node selection stage", "optional"],
+        ["answer_prompt_template", "Prompt override for answer stage", "optional"],
+        ["llm_callable", "External adapter instance for both stages", "`BaseExternalLLM` subclass instance"],
+        ["text_mode", "Context extraction mode", "`inclusive` or `exclusive`"],
+        ["tree_prompt_extra", "Extra JSON for selection prompt", "dict or null"],
+        ["answer_prompt_extra", "Extra JSON for answer prompt", "dict or null"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "RAGResult",
+        body: "The one-call helper returns the full set of staged outputs plus cumulative and delta usage.",
+        language: "json",
+        code: ragResultSample
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Returning plain text in tree_search stage",
-        fix: "Return valid JSON with `thinking` and `node_list` for tree selection."
+        mistake: "Treating the one-call helper as opaque",
+        fix: "Inspect `rag.reasoning`, `rag.context`, and `rag.cost_delta` after each run."
       },
       {
-        mistake: "Passing a function as llm_callable",
-        fix: "Use a `BaseExternalLLM` adapter instance (adapter-only)."
+        mistake: "Expecting separate adapter objects for search and answer in the one-call helper",
+        fix: "If you need different adapters per stage, use the step-by-step reasoning path."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Enable prompt inspection with return_prompt",
+        body: "Use this when you need the rendered prompt text in the returned result objects for debugging."
       }
     ],
     tryIt: [
-      "Start with the `AzureOpenAILLM` adapter or a small stub adapter that returns empty node lists.",
-      "Keep `temperature=0` while validating node selection behavior."
+      "Run one one-call reasoning example.",
+      "Inspect the node ids and cost delta.",
+      "Only then customize prompts or adapters."
     ],
     nextSteps: [
-      {
-        title: "CLI commands",
-        body: "Operationalize your flow in scripts and CI.",
-        to: "/docs/cli"
-      }
+      next("Custom prompt define", "/docs/reasoning-custom-prompt"),
+      next("Custom LLM define", "/docs/reasoning-custom-llm")
     ]
   }),
-  withCoreToc({
+  createArticle({
+    id: "reasoning-custom-prompt",
+    category: "Core concepts",
+    navParentId: "reasoning",
+    title: "Custom prompt define",
+    description:
+      "Override prompt text only after the default reasoning flow is stable. Current reasoning APIs accept either a string template or a callable prompt builder.",
+    whatThisPageIsFor: [
+      "Show the current prompt customization path for reasoning APIs.",
+      "Explain how `prompt_extra`, `tree_prompt_extra`, and `answer_prompt_extra` are injected.",
+      "Keep prompt customization explicit and stage-specific."
+    ],
+    whenToUse: [
+      "The default reasoning prompts are not strict enough for your task",
+      "You want a custom format or extra constraints in the prompt",
+      "You want to inspect prompt text for debugging"
+    ],
+    prerequisites: [
+      "A working default reasoning run",
+      "An understanding of which stage you want to customize"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
+      {
+        title: "Pass a string template to reason_over_tree",
+        body: "If your template contains `{extra_json}`, Navexa fills it. If not, Navexa appends a JSON section automatically when `prompt_extra` is present.",
+        language: "python",
+        code: `template = """Question: {query}
+
+Tree:
+{tree_json}
+
+Extra:
+{extra_json}
+
+Return JSON with thinking and node_list."""
+
+reasoning = reason_over_tree(
+    query="Which parser settings were used?",
+    tree=tree,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
+    prompt_template=template,
+    prompt_extra={"must_include_pages": True},
+)`
+      },
+      {
+        title: "Pass a callable prompt builder to answer_from_context",
+        body: "Use a callable when you want full control over how the prompt string is assembled.",
+        language: "python",
+        code: `def answer_prompt(query, context_text, extra):
+    return f"""Question: {query}
+
+Context:
+{context_text}
+
+Answer policy:
+{extra}
+"""
+
+answer = answer_from_context(
+    query="Which parser settings were used?",
+    context_text=context.text,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
+    prompt_template=answer_prompt,
+    prompt_extra={"style": "cite exact field names"},
+)`
+      },
+      {
+        title: "Customize the one-call helper stage by stage",
+        body: "Use `tree_prompt_template` and `answer_prompt_template` separately when you want different policies for search and final answer.",
+        language: "python",
+        code: `rag = run_reasoning_rag(
+    query="Which parser settings were used?",
+    tree_or_source=tree,
+    model_config={
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "api_key": "...",
+    },
+    tree_prompt_template=template,
+    answer_prompt_template=answer_prompt,
+    tree_prompt_extra={"must_include_pages": True},
+    answer_prompt_extra={"style": "cite exact field names"},
+)`
+      }
+    ],
+    variablesTable: table(
+      ["Field", "Meaning", "Accepted shape"],
+      [
+        ["prompt_template", "Prompt override for a single-stage API", "string or callable"],
+        ["tree_prompt_template", "Selection-stage prompt override", "string or callable"],
+        ["answer_prompt_template", "Answer-stage prompt override", "string or callable"],
+        ["prompt_extra", "Extra JSON payload for single-stage prompt", "dict or null"],
+        ["tree_prompt_extra", "Extra JSON payload for tree-search prompt", "dict or null"],
+        ["answer_prompt_extra", "Extra JSON payload for answer prompt", "dict or null"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Prompt-extra behavior summary",
+        body: "This is the current prompt injection behavior used by the reasoning prompt renderers.",
+        language: "text",
+        code: `If template contains {extra_json}:
+- Navexa replaces it with the JSON payload
+
+If template does not contain {extra_json} and extra exists:
+- Navexa appends a dedicated JSON section automatically`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Customizing prompts before the default reasoning path works",
+        fix: "Only customize prompts after you have a stable baseline and a clear reason for the change."
+      },
+      {
+        mistake: "Using one prompt template shape for every stage without thinking",
+        fix: "Search prompts and answer prompts solve different jobs. Customize them separately when necessary."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Return prompts for debugging",
+        body: "Set `return_prompt=True` so reasoning or answer result objects include the rendered prompt text."
+      }
+    ],
+    tryIt: [
+      "Override one reasoning prompt with a string template.",
+      "Add `prompt_extra` and confirm the extra JSON appears as expected.",
+      "Only then move to callable prompt builders."
+    ],
+    nextSteps: [
+      next("Custom LLM define", "/docs/reasoning-custom-llm"),
+      next("CLI Commands", "/docs/cli")
+    ]
+  }),
+  createArticle({
+    id: "reasoning-custom-llm",
+    category: "Core concepts",
+    navParentId: "reasoning",
+    title: "Custom LLM define",
+    description:
+      "Current external LLM integration is adapter-only. Pass a `BaseExternalLLM` subclass instance as `llm_callable` when you want Navexa reasoning to use your own backend.",
+    whatThisPageIsFor: [
+      "Document the current external adapter contract exactly.",
+      "Remove older function-style llm_callable assumptions.",
+      "Show when to use one adapter for both stages and when to split the steps."
+    ],
+    whenToUse: [
+      "You want to route reasoning through your own provider stack",
+      "You need a custom client wrapper for internal infrastructure",
+      "You want search and answer to use a non-default backend"
+    ],
+    prerequisites: [
+      "A working reasoning baseline with internal providers first",
+      "A reason to replace the default LLM client path"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
+      {
+        title: "Subclass BaseExternalLLM",
+        body: "This is the supported contract. The adapter must implement `invoke(prompt=..., model=..., stage=...)`.",
+        language: "python",
+        code: `from navexa import BaseExternalLLM
+
+class RouterLLM(BaseExternalLLM):
+    def __init__(self):
+        super().__init__(provider="custom-router", default_model="router-default")
+
+    def invoke(self, *, prompt, model, stage):
+        return {
+            "stage": stage,
+            "model": model,
+            "answer": "Replace this with your real backend call.",
+        }`
+      },
+      {
+        title: "Pass the adapter instance to reasoning APIs",
+        body: "Current runtime accepts adapter instances, not plain function-style callables.",
+        language: "python",
+        code: `adapter = RouterLLM()
+
+reasoning = reason_over_tree(
+    query="Which parser settings were used?",
+    tree=tree,
+    model="router-default",
+    llm_callable=adapter,
+)`
+      },
+      {
+        title: "Use the split path if different stages need different adapters",
+        body: "The one-call helper takes one adapter object. Use the split reasoning path if search and answer should route differently.",
+        language: "python",
+        code: `search_adapter = RouterLLM()
+answer_adapter = RouterLLM()
+
+reasoning = reason_over_tree(
+    query="Which parser settings were used?",
+    tree=tree,
+    model="router-default",
+    llm_callable=search_adapter,
+)
+
+context = extract_selected_context(tree, reasoning.node_list)
+
+answer = answer_from_context(
+    query="Which parser settings were used?",
+    context_text=context.text,
+    model="router-default",
+    llm_callable=answer_adapter,
+)`
+      }
+    ],
+    variablesTable: table(
+      ["Adapter element", "Meaning", "Notes"],
+      [
+        ["provider", "Adapter identity label", "custom string"],
+        ["default_model", "Fallback model if call does not pass one", "optional but practical"],
+        ["invoke(prompt, model, stage)", "Required adapter contract", "must be implemented"],
+        ["stage", "Reasoning stage name", "`tree_search` or `answer_generation`"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Current adapter contract",
+        body: "This is the supported adapter-only path.",
+        language: "python",
+        code: `class BaseExternalLLM:
+    def resolve_model(self, model): ...
+    def invoke(self, *, prompt, model, stage): ...
+    def __call__(self, prompt, model, stage): ...`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Passing a plain function as llm_callable",
+        fix: "Current runtime requires an instance of a `BaseExternalLLM` subclass."
+      },
+      {
+        mistake: "Forgetting to provide a model for the adapter",
+        fix: "Set `default_model` on the adapter or pass `model=...` in the Navexa call."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Inspect prompts with return_prompt before blaming the adapter",
+        body: "Debug prompt text first so you know whether a routing problem or a prompt problem caused the behavior."
+      }
+    ],
+    tryIt: [
+      "Build one minimal adapter that returns a stub response.",
+      "Pass it to `reason_over_tree`.",
+      "Only then connect the adapter to a real backend."
+    ],
+    nextSteps: [
+      next("CLI Commands", "/docs/cli"),
+      next("Compatibility and Deprecated", "/docs/compatibility-deprecated")
+    ]
+  }),
+  createArticle({
     id: "cli",
     category: "Reference",
     title: "CLI Commands",
     description:
-      "Use `navexa-index` for repeatable indexing in scripts, cron jobs, and CI pipelines.",
-    whatYouBuild: [
-      "A shell-first workflow that mirrors Python API behavior.",
-      "A reproducible command template for each document type."
+      "The current CLI mirrors the grouped runtime model: `--model-config` and `--parser-config` are the preferred inputs, while old flat flags remain for compatibility only.",
+    whatThisPageIsFor: [
+      "Show the current CLI path first.",
+      "Keep grouped JSON config above the old flat flag path.",
+      "Document transcript CLI behavior correctly."
+    ],
+    whenToUse: [
+      "You want repeatable terminal indexing runs",
+      "You want config files for parser or model settings",
+      "You want to automate indexing outside notebooks"
     ],
     prerequisites: [
-      "Navexa installed",
-      "Absolute paths for input/output",
-      "Configured env vars for llm mode"
+      "A working `navexa-index` install",
+      "A PDF path and output directory",
+      "Model config only when you need LLM"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Basic no-LLM run (recommended smoke command)",
-        body: "Use this first. It is deterministic and cheap to debug.",
+        title: "Run a structured no-LLM smoke command",
+        body: "This is still the best first CLI run.",
         language: "bash",
-        code: `navexa-index \n\
-  --pdf /absolute/path/document.pdf \n\
-  --out-dir /absolute/path/out \n\
-  --mode no-llm \n\
-  --document-type structured \n\
-  --output-format markdown \n\
-  --verbose medium \n\
+        code: `navexa-index
+  --pdf /absolute/path/document.pdf
+  --out-dir /absolute/path/out
+  --document-type structured
+  --mode no-llm
   --with-validation`
       },
       {
-        title: "Structured LLM run",
-        body: "Use high verbosity while hardening your first production LLM command.",
+        title: "Run with grouped JSON config files",
+        body: "This is the current preferred path when CLI configuration grows beyond a tiny example.",
         language: "bash",
-        code: `navexa-index \n\
-  --pdf /absolute/path/document.pdf \n\
-  --out-dir /absolute/path/out \n\
-  --mode llm \n\
-  --document-type structured \n\
-  --parser-model docling \n\
-  --output-format markdown \n\
-  --verbose high \n\
-  --if-add-node-summary yes \n\
+        code: `navexa-index
+  --pdf /absolute/path/document.pdf
+  --out-dir /absolute/path/out
+  --document-type structured
+  --mode llm
+  --model-config /absolute/path/model-config.json
+  --parser-config /absolute/path/parser-config.json
   --with-validation`
       },
       {
-        title: "Transcript run",
-        body:
-          "Transcript CLI run (LLM-required). `--output-format` is accepted for API consistency but does not currently change transcript parsing.",
+        title: "Run transcript correctly",
+        body: "Transcript stays LLM-required and ignores parser config inputs.",
         language: "bash",
-        code: `navexa-index \n\
-  --pdf /absolute/path/transcript.pdf \n\
-  --out-dir /absolute/path/transcript_out \n\
-  --mode llm \n\
-  --document-type transcript \n\
-  --verbose medium`
-      },
-      {
-        title: "If navexa-index is command not found",
-        body:
-          "If you installed with `pip install --user`, add your user scripts folder to PATH once (macOS, Linux, or Windows).",
-        language: "bash",
-        code: `# macOS (zsh)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-which navexa-index
-navexa-index --help
-
-# Linux (bash)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-which navexa-index
-navexa-index --help
-
-# Windows PowerShell
-$UserBase = python -m site --user-base
-$ScriptsPath = "$UserBase\\Scripts"
-[Environment]::SetEnvironmentVariable("Path", "$env:Path;$ScriptsPath", "User")
-$env:Path = "$env:Path;$ScriptsPath"
-where navexa-index
-navexa-index --help
-
-# Windows CMD
-for /f "delims=" %i in ('python -m site --user-base') do set "USERBASE=%i"
-set "PATH=%PATH%;%USERBASE%\\Scripts"
-where navexa-index
-navexa-index --help`
-      },
-      {
-        title: "All CLI flags (reference)",
-        body: "These flags map to the same parameters you can pass in Python APIs.",
-        table: {
-          headers: ["Flag", "Allowed values", "Default"],
-          rows: [
-            ["--pdf", "PDF path", "required"],
-            ["--out-dir", "output dir", "required"],
-            ["--model", "model/deployment string", "None"],
-            ["--mode", "llm | no-llm (no-llm for structured flow)", "NAVEXA_MODE or no-llm"],
-            ["--document-type", "structured | semi_structured | unstructured | transcript", "structured"],
-            ["--parser-model", "docling", "docling"],
-            ["--output-format", "markdown | text", "markdown"],
-            ["--verbose", "low/medium/high or 1/2/3", "medium"],
-            ["--max-token-num-each-node", "int", "12000"],
-            ["--max-page-num-each-node", "int", "8"],
-            ["--if-add-node-summary", "yes | no", "yes"],
-            ["--with-validation", "switch", "off"],
-            ["--with-compat", "switch", "off"]
-          ]
-        }
+        code: `navexa-index
+  --pdf /absolute/path/transcript.pdf
+  --out-dir /absolute/path/out
+  --document-type transcript
+  --mode llm
+  --model-config /absolute/path/model-config.json`
       }
     ],
-    whyThisMatters: [
-      "CLI runs are easy to automate and monitor.",
-      "Absolute paths reduce deployment-time surprises."
+    variablesTable: table(
+      ["Flag", "Meaning", "Notes"],
+      [
+        ["--pdf", "Input PDF path", "required"],
+        ["--out-dir", "Output directory", "required"],
+        ["--document-type", "structured | semi_structured | unstructured | transcript", "defaults to structured"],
+        ["--mode", "llm | no-llm", "defaults from env or no-llm"],
+        ["--model-config", "Inline JSON or path to JSON file", "preferred"],
+        ["--parser-config", "Inline JSON or path to JSON file", "preferred for non-transcript flows"],
+        ["--with-validation", "Write validation_report.json", "optional"],
+        ["--with-compat", "Write tree_legacy_compat.json", "compatibility-only output"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "parser-config.json example",
+        body: "Use file-based JSON once parser setup is more than a couple of fields.",
+        language: "json",
+        code: cliParserConfigJson
+      },
+      {
+        title: "CLI output shape",
+        body: "With one artifact, the CLI prints a single path. With extra outputs enabled, it prints a JSON object of paths.",
+        language: "text",
+        code: `/absolute/path/out/tree_navexa.json`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Running CLI without activated environment",
-        fix: "Activate your environment before calling `navexa-index`."
+        mistake: "Using `--parser-config` in transcript runs and expecting it to apply",
+        fix: "Current CLI warns that parser configuration is ignored for transcript."
+      },
+      {
+        mistake: "Teaching `--model` before `--model-config`",
+        fix: "Keep `--model` in migration notes only. Use `--model-config` in current examples."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Inline JSON still works",
+        body: "Use inline JSON only when the config is short enough to stay readable in the shell."
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Legacy parser flags are still accepted",
+        body: "Flags like `--parser-model` and `--docling-profile` are compatibility shorthands. Do not lead new examples with them."
+      },
+      {
+        title: "Legacy --model is deprecated",
+        body: "Current CLI still accepts it, but `--model-config` is the preferred public path."
       }
     ],
     tryIt: [
-      "Run a command with `--with-validation` and inspect the report.",
-      "Repeat in `no-llm` and compare cost fields."
+      "Run one structured no-LLM CLI command.",
+      "Move parser settings into `parser-config.json`.",
+      "Keep transcript CLI separate from parser CLI examples."
     ],
     nextSteps: [
-      {
-        title: "Output schema",
-        body: "Understand exactly what fields your downstream systems can rely on.",
-        to: "/docs/output-schema"
-      }
+      next("Python API Reference (Top-level)", "/docs/api-reference"),
+      next("Troubleshooting", "/docs/troubleshooting")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "api-reference",
     category: "Reference",
     title: "Python API Reference (Top-level)",
     description:
-      "A quick cheat sheet of what you can import from `navexa`, and what each function is for.",
-    whatYouBuild: [
-      "A clear map from task to function (index, save, load, reason, answer).",
-      "A safe default: import from `navexa` instead of internal modules."
+      "This page summarizes the current top-level exports you should teach and use from `navexa`. It keeps public wrappers above compatibility helpers and internal implementation details.",
+    whatThisPageIsFor: [
+      "List the current public API surface in one place.",
+      "Group the exports by indexing, saving/loading, reasoning, and utility functions.",
+      "Keep public wrappers above old compatibility-first calls."
     ],
-    prerequisites: [
-      "Navexa installed",
-      "Basic Python familiarity"
+    whenToUse: [
+      "You want a compact reference after reading the tutorial pages",
+      "You are checking which names are exported from `navexa` directly",
+      "You are validating a code sample against the public API"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Import from the top-level package",
-        body: "Navexa exposes the main workflows at the top level.",
-        language: "python",
-        code: `from navexa import index_structured_document_tree, save_document_tree`
-      },
-      {
-        title: "Indexing functions",
-        body: "Use one of these to convert a PDF into a tree.",
-        table: {
-          headers: ["Function", "Best for", "LLM required?"],
-          rows: [
-            ["index_structured_document_tree", "Clear headings / TOC", "optional"],
-            ["index_semi_structured_document_tree", "Messy headings / order", "required"],
-            ["index_unstructured_document_tree", "Weak or missing headings", "optional"],
-            ["index_transcript_document_tree", "Interviews / calls", "required"]
+        title: "Indexing and saving wrappers",
+        body: "These are the current wrapper functions to teach first.",
+        table: table(
+          ["Export", "Use"],
+          [
+            ["index_structured_document_tree", "Structured document indexing"],
+            ["index_semi_structured_document_tree", "Semi-structured document indexing"],
+            ["index_unstructured_document_tree", "Unstructured document indexing"],
+            ["index_transcript_document_tree", "Transcript indexing"],
+            ["save_document_tree", "Write tree and optional reports"],
+            ["index_and_save_document_tree", "Index + save in one call"]
           ]
-        }
+        )
       },
       {
-        title: "Convenience wrappers",
-        body: "Shortcuts for common patterns and backward compatibility.",
-        table: {
-          headers: ["Function", "What it does"],
-          rows: [
-            ["index_and_save_document_tree", "Index + save outputs in one call"],
-            ["index_document_tree", "Backward-compatible wrapper (routes to structured flow)"]
+        title: "Save/load helpers",
+        body: "Use these when your workflow moves between memory and saved artifacts.",
+        table: table(
+          ["Export", "Use"],
+          [
+            ["fetch_document_tree", "Load canonical tree from dict/path/dir/result"],
+            ["fetch_validation_report", "Load validation report if present"],
+            ["fetch_compat_tree", "Load legacy compat tree if present"]
           ]
-        }
+        )
       },
       {
-        title: "Save and fetch functions",
-        body: "Use these to persist and reload the tree.",
-        table: {
-          headers: ["Function", "What it does"],
-          rows: [
-            ["save_document_tree", "Write JSON outputs to a folder"],
-            ["fetch_document_tree", "Load tree_navexa.json from dict/path/dir"],
-            ["fetch_validation_report", "Load validation_report.json (if present)"],
-            ["fetch_compat_tree", "Load legacy compat tree (if present)"]
+        title: "Reasoning exports",
+        body: "These functions cover tree preparation, selection, context extraction, answer generation, and the one-call helper.",
+        table: table(
+          ["Export", "Use"],
+          [
+            ["build_search_tree_view", "Prompt-safe reasoning tree view"],
+            ["build_node_index", "Node lookup map"],
+            ["reason_over_tree", "LLM node selection"],
+            ["print_reasoning_trace", "Readable trace output"],
+            ["extract_selected_context", "Grounded context bundle"],
+            ["answer_from_context", "Context-grounded answer generation"],
+            ["run_reasoning_rag", "One-call reasoning workflow"]
           ]
-        }
+        )
       },
       {
-        title: "Reasoning and RAG functions",
-        body: "Use these to select nodes and answer questions from the selected context.",
-        table: {
-          headers: ["Function", "What it does"],
-          rows: [
-            ["build_search_tree_view", "Remove heavy text fields for prompting"],
-            ["build_node_index", "Build a node_id → node info mapping"],
-            ["reason_over_tree", "LLM selects relevant node ids"],
-            ["print_reasoning_trace", "Print reasoning + retrieved nodes"],
-            ["extract_selected_context", "Combine selected node text into context"],
-            ["answer_from_context", "Generate answer using only context"],
-            ["run_reasoning_rag", "One-call helper: reason + context + answer"]
+        title: "Result objects and utilities",
+        body: "These are the main returned object types and helper exports worth knowing.",
+        table: table(
+          ["Export", "Meaning"],
+          [
+            ["IndexResult", "Indexing return object"],
+            ["SaveResult", "Save helper return object"],
+            ["TreeReasoningResult", "Node-selection stage result"],
+            ["ContextBundle", "Extracted context return object"],
+            ["AnswerResult", "Final answer return object"],
+            ["RAGResult", "One-call reasoning return object"],
+            ["BaseExternalLLM", "Adapter base class for external reasoning backends"],
+            ["load_navexa_env", "Explicit env loader helper"],
+            ["get_model_pricing", "Pricing lookup helper"]
           ]
-        }
-      },
-      {
-        title: "Environment helper",
-        body: "Loads `.env` using Navexa’s environment loading rules.",
-        language: "python",
-        code: `from navexa import load_navexa_env\n\nload_navexa_env()`
+        )
       }
     ],
-    whyThisMatters: [
-      "Top-level imports are stable and easier to use across projects.",
-      "A clear map reduces wrong-function usage and avoids wasted time/cost."
+    sampleOutput: [
+      {
+        title: "Public import pattern",
+        body: "Prefer top-level imports in examples unless you are reading internals.",
+        language: "python",
+        code: `from navexa import (
+    index_structured_document_tree,
+    save_document_tree,
+    fetch_document_tree,
+    run_reasoning_rag,
+    BaseExternalLLM,
+)`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Importing from internal modules like navexa.pipeline.*",
-        fix: "Import from `navexa` unless you are intentionally developing the library."
+        mistake: "Importing internal modules in user-facing examples",
+        fix: "Use top-level `navexa` imports for public docs unless you are explicitly documenting internals."
+      },
+      {
+        mistake: "Teaching `index_document_tree` as the main wrapper",
+        fix: "Keep typed wrappers first and move `index_document_tree` to compatibility notes."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Tree reasoning accepts either model_config or an external adapter",
+        body: "Internal providers use `model_config`. External backends use `BaseExternalLLM` adapter instances."
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Backward-compatible wrapper still exists",
+        body: "`index_document_tree(...)` remains for compatibility, but new examples should use the typed wrappers."
       }
     ],
     tryIt: [
-      "Open a Python REPL and import the functions you need.",
-      "Run one index and save the output.",
-      "Load the tree back and run one reasoning query."
+      "Compare your code sample imports to this page.",
+      "Replace any internal-import examples with top-level imports where possible.",
+      "Move old wrapper usage into compatibility notes."
     ],
     nextSteps: [
-      {
-        title: "Quickstart",
-        body: "Index your first PDF and inspect the generated tree.",
-        to: "/docs/quickstart"
-      },
-      {
-        title: "Reasoning retrieval workflow",
-        body: "Select nodes before answering questions.",
-        to: "/docs/reasoning"
-      }
+      next("Output Schema (Canonical)", "/docs/output-schema"),
+      next("Compatibility and Deprecated", "/docs/compatibility-deprecated")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "output-schema",
     category: "Reference",
     title: "Output Schema (Canonical)",
     description:
-      "`tree_navexa.json` is the primary output contract for indexing, retrieval, analytics, and QA.",
-    whatYouBuild: [
-      "A mental model of top-level and node-level schema fields.",
-      "Safer downstream consumers that avoid brittle assumptions."
+      "Use this page as the canonical output reference. It shows one realistic `tree_navexa.json` sample, one realistic `validation_report.json` sample, and the plain-English meaning of the important keys.",
+    whatThisPageIsFor: [
+      "Keep one canonical schema explanation instead of repeating partial schema fragments across multiple pages.",
+      "Explain the saved tree and validation report in the order users actually inspect them.",
+      "Highlight the newest pipeline metadata fields that matter for debugging."
     ],
-    prerequisites: [
-      "At least one indexed document output"
+    whenToUse: [
+      "You are inspecting saved outputs",
+      "You are wiring Navexa output into another system",
+      "You need to understand where mode, parser, model, warnings, and summary metadata live"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Know which files are written",
-        body: "Indexing can write one or more JSON files depending on your flags.",
-        table: {
-          headers: ["File", "When it exists", "What it is"],
-          rows: [
-            ["tree_navexa.json", "always when write_tree=True", "Canonical output tree"],
-            ["validation_report.json", "when write_validation=True / --with-validation", "Quality + diagnostics"],
-            ["tree_legacy_compat.json", "when write_compat=True / --with-compat", "Legacy compatibility export"]
+        title: "tree_navexa.json sample",
+        body: "This is the canonical saved tree format that downstream workflows should treat as the default artifact.",
+        language: "json",
+        code: treeSampleJson
+      },
+      {
+        title: "tree_navexa.json key meanings",
+        body: "Read the top-level keys first, then the `pipeline` object, then the `structure` nodes.",
+        table: table(
+          ["Key", "Meaning"],
+          [
+            ["doc_id / doc_name", "Stable document identifiers for the saved tree"],
+            ["pages", "Document page count"],
+            ["source", "Input PDF metadata such as absolute path, hash, and page count"],
+            ["cost", "Usage and estimated pricing summary"],
+            ["pipeline", "Resolved runtime metadata, outline metadata, parser settings, model metadata, warnings, and mode fields"],
+            ["structure", "The canonical node hierarchy used by save/fetch and reasoning"]
           ]
-        }
+        )
       },
       {
-        title: "Inspect top-level keys",
-        body: "Start with `source`, `cost`, `pipeline`, and `structure`.",
-        language: "json",
-        code: `{
-  "doc_id": "sample-doc",
-  "doc_name": "sample-doc",
-  "pages": {"count": 26},
-  "pipeline_version": "0.1.x",
-  "source": {...},
-  "cost": {...},
-  "pipeline": {...},
-  "structure": [...],
-  "transcript": {...}   // only for transcript mode
-}`
+        title: "Important pipeline fields to inspect first",
+        body: "These are the fields that most often explain why a run behaved the way it did.",
+        table: table(
+          ["pipeline field", "Meaning"],
+          [
+            ["document_type", "Which wrapper behavior was used"],
+            ["requested_mode", "What you asked for"],
+            ["effective_mode", "What Navexa actually used"],
+            ["llm_required", "Whether the flow requires LLM"],
+            ["summary_enabled", "Whether node summaries are present"],
+            ["model_config", "Safe serialized model metadata without secrets"],
+            ["parser_config", "Resolved grouped parser config"],
+            ["warnings", "Recoverable parser/runtime warnings collected during the run"]
+          ]
+        )
       },
       {
-        title: "Inspect node payload",
-        body: "Use `exclusive_text` for node-only text and `full_text` for inclusive context.",
+        title: "validation_report.json sample",
+        body: "Validation is optional, but it is the fastest quality report to compare between runs.",
         language: "json",
-        code: `{
-  "node_id": "0012",
-  "title": "2 DOSAGE AND ADMINISTRATION",
-  "level": 1,
-  "start_index": 3,
-  "end_index": 4,
-  "exclusive_text": "...",
-  "full_text": "...",
-  "children": []
-}`
+        code: validationSampleJson
       },
       {
-        title: "Where to look for cost and runtime settings",
-        body:
-          "`cost` contains calls/tokens/estimated cost. `pipeline` contains mode, parser settings, node limits, and the steps executed.",
-        language: "json",
-        code: `{
-  "cost": {
-    "calls": 12,
-    "total_tokens": 12345,
-    "estimated_cost_usd": 0.42
-  },
-  "pipeline": {
-    "requested_mode": "llm",
-    "effective_mode": "llm",
-    "document_type": "structured",
-    "parser_model": "docling",
-    "output_format": "markdown"
-  }
-}`
+        title: "validation_report.json key meanings",
+        body: "Validation metrics mix core structure checks with flow-specific metrics added by the indexing pipeline.",
+        table: table(
+          ["Key", "Meaning"],
+          [
+            ["generated_at", "UTC timestamp for the report"],
+            ["pipeline_version", "Pipeline version string"],
+            ["metrics.node_count", "Total number of nodes in the saved structure"],
+            ["metrics.empty_node_rate", "Fraction of nodes with empty full_text"],
+            ["metrics.heading_anchor_match_rate", "How well headings aligned in flows that use them"],
+            ["metrics.overlap_violations", "Whether segmentation overlap issues were detected"],
+            ["metrics.duplicated_block_rate", "Whether segmentation duplicated content"],
+            ["metrics.summary_coverage", "Share of nodes that received summaries when summaries were enabled"]
+          ]
+        )
       }
     ],
-    whyThisMatters: [
-      "Schema awareness prevents accidental breakage in retrieval pipelines.",
-      "You can version checks around stable fields while letting internals evolve."
+    sampleOutput: [
+      {
+        title: "Transcript note",
+        body: "Transcript runs can include an extra top-level `transcript` object. Keep `tree_navexa.json` as the main canonical container either way.",
+        language: "text",
+        code: `Transcript runs may include:
+tree_navexa["transcript"]`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Treating legacy compat file as canonical",
-        fix: "Use `tree_navexa.json` as default and enable compat only for legacy clients."
+        mistake: "Treating `tree_legacy_compat.json` as the main schema",
+        fix: "Use `tree_navexa.json` as the canonical schema and compat only for migration consumers."
+      },
+      {
+        mistake: "Reading only `structure` and ignoring `pipeline`",
+        fix: "The `pipeline` object explains the runtime choices that produced the structure."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Outline and flow-specific fields vary by document type",
+        body: "Some pipeline keys such as transcript metadata or outline verification fields appear only on the flows that use them."
+      }
+    ],
+    deprecatedNotes: [
+      {
+        title: "Compat schema is not the primary reference",
+        body: "Keep compatibility schema explanation on the final compatibility page, not in your first schema reading path."
       }
     ],
     tryIt: [
-      "Write a small validator that checks required top-level keys.",
-      "Fail your pipeline early if required fields are missing."
+      "Open one saved tree and identify `requested_mode`, `effective_mode`, `model_config`, and `parser_config`.",
+      "Open the validation report and compare node_count and summary_coverage.",
+      "Use this page as the single schema reference instead of collecting partial tables from other pages."
     ],
     nextSteps: [
-      {
-        title: "Troubleshooting",
-        body: "Diagnose the most common runtime and environment issues quickly.",
-        to: "/docs/troubleshooting"
-      }
+      next("Troubleshooting", "/docs/troubleshooting"),
+      next("Compatibility and Deprecated", "/docs/compatibility-deprecated")
     ]
   }),
-  withCoreToc({
+  createArticle({
     id: "troubleshooting",
     category: "Reference",
     title: "Troubleshooting",
     description:
-      "Most failures are environment drift, parser backend conflicts, or missing credentials. This checklist gets you unstuck fast.",
-    whatYouBuild: [
-      "A triage checklist for local development and production-like runs.",
-      "A repeatable debug flow your team can document internally."
+      "Use this page to debug current Navexa behavior quickly. Start from the exact wrapper, saved pipeline metadata, and runtime error text instead of guessing from older examples.",
+    whatThisPageIsFor: [
+      "Help users debug the latest wrapper and CLI behavior.",
+      "Keep current runtime rules above old assumptions.",
+      "Point users back to inspect saved pipeline metadata instead of treating runs as opaque."
     ],
-    prerequisites: [
-      "Access to terminal logs",
-      "The failing command or notebook cell"
+    whenToUse: [
+      "A run fails fast",
+      "Output does not match the mode or parser behavior you expected",
+      "You are seeing differences between current docs and older examples"
     ],
+    stepsTitle: "Minimum working flow",
     steps: [
       {
-        title: "Validate environment",
-        body: "Check that Python executable and package imports match your intended environment.",
-        language: "bash",
-        code: `python -c "import sys, navexa; print(sys.executable); print('navexa ok')"
-python -c "import docling, openai, tiktoken; print('deps ok')"`
+        title: "Start from the exact wrapper and saved pipeline metadata",
+        body: "The wrapper tells you which runtime rules apply. Then inspect the saved tree metadata before changing code."
       },
       {
-        title: "Inspect mode and summary settings",
-        body: "Zero cost or empty summaries usually means no LLM call path was used.",
-        language: "bash",
-        code: `echo $NAVEXA_MODE
-echo $OPENAI_MODEL_NAME
-echo $AZURE_DEPLOYMENT_NAME
-echo $NAVEXA_IF_ADD_NODE_SUMMARY`
-      },
-      {
-        title: "Know when LLM is required",
-        body:
-          "Transcript is strictly LLM-required. Semi-structured wrapper also enforces LLM mode. Unstructured can run with or without LLM.",
-        table: {
-          headers: ["Document type", "LLM required?", "What happens if key/model is missing"],
-          rows: [
-            ["structured", "optional", "Falls back to no-LLM when needed"],
-            ["unstructured", "optional", "Runs no-LLM unless mode='llm' is forced"],
-            ["semi_structured", "required (wrapper behavior)", "Raises RuntimeError in wrapper if model/key missing"],
-            ["transcript", "required", "Raises RuntimeError (fail-fast)"]
-          ]
-        }
-      },
-      {
-        title: "Notebook tips",
-        body: "Most notebook issues are caused by mismatched kernels or missing notebook extras.",
-        language: "bash",
-        code: `# In Python, confirm which interpreter is running
-python - <<'PY'
-import sys
-print(sys.executable)
-PY
-
-# Optional: if you see tqdm/IProgress warnings
-python -m pip install -U "navexa[notebook]"`
-      },
-      {
-        title: "If you see an asyncio event loop error",
-        body:
-          "Some notebook environments already run an event loop. If you hit an event-loop RuntimeError, restart the kernel and re-run imports.",
+        title: "Check the common current runtime errors",
+        body: "Current code uses clearer fail-fast errors for missing model and credential cases.",
         language: "text",
-        code: `Common error:\nRuntimeError: asyncio.run() cannot be called from a running event loop\n\nFix:\n1) Restart notebook kernel\n2) Re-run imports\n3) Re-run your index/reasoning cell`
+        code: `mode='llm' requested but credentials are missing for selected provider.
+mode='llm' requested but model is not configured.
+document_type='transcript' requires LLM, but model or credentials are missing.`
       },
       {
-        title: "If navexa-index is command not found",
-        body:
-          "When installed with --user, the script lives in your user scripts folder. Add it to PATH for macOS, Linux, or Windows.",
-        language: "bash",
-        code: `# macOS (zsh)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-which navexa-index
-navexa-index --help
+        title: "Inspect output metadata and warnings",
+        body: "If the run completed, the saved tree often tells you what happened faster than a long guesswork loop.",
+        language: "python",
+        code: `from navexa import fetch_document_tree
 
-# Linux (bash)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-which navexa-index
-navexa-index --help
+tree = fetch_document_tree("/absolute/path/out")
 
-# Windows PowerShell
-$UserBase = python -m site --user-base
-$ScriptsPath = "$UserBase\\Scripts"
-[Environment]::SetEnvironmentVariable("Path", "$env:Path;$ScriptsPath", "User")
-$env:Path = "$env:Path;$ScriptsPath"
-where navexa-index
-navexa-index --help
-
-# Windows CMD
-for /f "delims=" %i in ('python -m site --user-base') do set "USERBASE=%i"
-set "PATH=%PATH%;%USERBASE%\\Scripts"
-where navexa-index
-navexa-index --help`
-      },
-      {
-        title: "Acknowledgment and project scope (important)",
-        body:
-          "Navexa is an open-source project that takes inspiration from PageIndex’s high-level pipeline ideas, while implementing its own codebase, flow, and extensions for practical production use.",
-        bullets: [
-          "Acknowledgment: PageIndex influenced the general workflow pattern (outline/tree-first indexing philosophy).",
-          "Independent implementation: Navexa does not copy the whole library; it implements its own modules, API surface, and runtime behavior.",
-          "Navexa-specific logic: Docling-based parsing, markdown-first tree construction, manual/synthetic TOC handling, LLM-assisted correction, and canonical API-like JSON output.",
-          "Customization: you can use one configured provider for all steps, or pass custom prompts and an external adapter via `llm_callable` (BaseExternalLLM) at reasoning/answer stages.",
-          "Open-source intent: Navexa is fully open and extensible, so teams can adapt it to their own pipelines.",
-          "Attribution principle: using an upstream idea is normal in software ecosystems (similar to how many projects build on foundational libraries), while still keeping clear credit and independent implementation."
-        ],
-        table: {
-          headers: ["Area", "Inspiration", "Navexa implementation"],
-          rows: [
-            ["Pipeline philosophy", "PageIndex-style tree-first approach", "Rebuilt in Navexa with its own APIs and docs contract"],
-            ["Document parsing", "General PDF indexing pattern", "Docling-driven parsing + Navexa segmentation logic"],
-            ["TOC handling", "TOC detect/create/verify concept", "Navexa flow with manual/synthetic TOC + LLM correction paths"],
-            ["Output format", "Node-oriented tree output concept", "Navexa canonical JSON schema + validation report + optional compat export"],
-            ["LLM integration", "LLM-assisted indexing idea", "Provider-configurable pipeline + custom prompt + external adapter hooks"]
-          ]
-        }
+print(tree["pipeline"]["requested_mode"])
+print(tree["pipeline"]["effective_mode"])
+print(tree["pipeline"]["model_config"])
+print(tree["pipeline"]["parser_config"])
+print(tree["pipeline"]["warnings"])`
       }
     ],
-    whyThisMatters: [
-      "Fast diagnosis shortens iteration and cuts wasted API cost.",
-      "Most issues can be solved without code changes."
+    sampleOutput: [
+      {
+        title: "Current parser warning path",
+        body: "Recoverable parser issues are surfaced in a structured way.",
+        language: "json",
+        code: `{
+  "pipeline": {
+    "warnings": [
+      {
+        "stage": "ocr",
+        "message": "Recoverable parser warning message"
+      }
+    ]
+  }
+}`
+      }
     ],
     commonMistakes: [
       {
-        mistake: "Running notebook kernel from a different environment",
-        fix: "Restart kernel after installing dependencies and verify `sys.executable`."
+        mistake: "Using semi-structured troubleshooting rules from older versions",
+        fix: "Current semi-structured indexing is optional-LLM, not strictly LLM-required."
       },
       {
-        mistake: "Interpreting warning logs as fatal",
-        fix: "Confirm whether command actually failed before changing pipeline logic."
+        mistake: "Trying to fix transcript issues with parser_config",
+        fix: "Transcript does not use the public parser path. Fix model configuration or transcript-specific prompt behavior instead."
+      },
+      {
+        mistake: "Ignoring the `warnings` field after a run completed",
+        fix: "Current code intentionally stores recoverable warnings in `tree_navexa.pipeline.warnings`."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Structured and semi-structured force markdown",
+        body: "If you request `output_format=\"text\"` for those flows, current code warns and changes it back to markdown."
+      },
+      {
+        title: "Use the step-by-step reasoning path to isolate failures",
+        body: "When reasoning output is unclear, debug tree search, context extraction, and answer generation as separate stages."
       }
     ],
     tryIt: [
-      "Capture one failing run command and create an internal runbook entry.",
-      "Add sanity checks before your first production job."
+      "Read the exact runtime error text first.",
+      "If a run completed, inspect `pipeline` metadata next.",
+      "Only then change model or parser inputs."
     ],
     nextSteps: [
+      next("Compatibility and Deprecated", "/docs/compatibility-deprecated"),
+      next("Install and Verify", "/docs/install")
+    ]
+  }),
+  createArticle({
+    id: "compatibility-deprecated",
+    category: "Reference",
+    title: "Compatibility and Deprecated",
+    description:
+      "This page is intentionally last. It exists to help older code keep running while you migrate it to the current public API and docs style.",
+    whatThisPageIsFor: [
+      "Collect compatibility-only guidance in one place at the end of the docs.",
+      "Map old calls and flags to the current grouped config path.",
+      "Keep migration detail out of the top half of tutorial pages."
+    ],
+    whenToUse: [
+      "You are migrating older notebooks, scripts, or CLI commands",
+      "You found old examples that do not match the current docs",
+      "You need temporary compatibility while updating downstream consumers"
+    ],
+    stepsTitle: "Minimum working flow",
+    steps: [
       {
-        title: "License and attribution",
-        body: "Understand licensing and where third-party notices live.",
-        to: "/docs/license"
+        title: "Migrate old model args",
+        body: "Teach `model_config` first in new docs. Keep `model=` only when older code still depends on it.",
+        table: table(
+          ["Old path", "Current preferred path"],
+          [
+            ["model=...", "model_config={ provider, model, api_key, base_url, pricing_model }"],
+            ["--model", "--model-config"]
+          ]
+        )
       },
       {
-        title: "Documentation architecture",
-        body: "See how the docs structure maps to tutorials, how-to, and reference layers.",
-        to: "/docs/architecture"
+        title: "Migrate old parser args",
+        body: "Move flat parser arguments into grouped parser_config for both Python and CLI.",
+        table: table(
+          ["Old path", "Current preferred path"],
+          [
+            ["parser_model", "parser_config.name"],
+            ["output_format", "parser_config.output_format"],
+            ["docling_options", "parser_config.options"],
+            ["flat parser CLI flags", "--parser-config"]
+          ]
+        )
+      },
+      {
+        title: "Migrate older indexing wrappers",
+        body: "Typed wrappers make the document type explicit and reduce confusion in docs.",
+        table: table(
+          ["Older wrapper", "Current preferred wrapper"],
+          [
+            ["index_document_tree(...)", "index_structured_document_tree(...) by default"],
+            ["semi wrapper docs that require LLM", "current semi wrapper docs with optional LLM"],
+            ["transcript docs with parser args", "current transcript wrapper docs without parser args"]
+          ]
+        )
+      },
+      {
+        title: "Treat compat output as a migration artifact",
+        body: "Use `write_compat` or `--with-compat` only when a downstream consumer still needs `tree_legacy_compat.json`."
       }
+    ],
+    variablesTable: table(
+      ["Compatibility item", "Current status", "Replacement"],
+      [
+        ["model=...", "Deprecated but still supported", "model_config"],
+        ["--model", "Deprecated but still supported", "--model-config"],
+        ["parser_model / output_format / docling_options", "Deprecated but still supported", "parser_config"],
+        ["flat parser CLI flags", "Compatibility shorthands", "--parser-config"],
+        ["index_document_tree", "Backward-compatible wrapper", "typed indexing wrappers"],
+        ["write_compat / --with-compat", "Compatibility-only artifact export", "tree_navexa.json as canonical output"]
+      ]
+    ),
+    sampleOutput: [
+      {
+        title: "Typical compatibility warnings",
+        body: "These warnings are a sign to migrate the example, not to teach the old pattern as first-class behavior.",
+        language: "text",
+        code: `FutureWarning: model is deprecated. Prefer model_config.
+DeprecationWarning: parser_model, output_format, and docling_options are deprecated.
+UserWarning: --model-config and legacy --model were both provided. --model wins for compatibility.`
+      }
+    ],
+    commonMistakes: [
+      {
+        mistake: "Leaving compatibility examples mixed into beginner tutorials",
+        fix: "Keep them here or at the very bottom of a page so the current public path stays clear."
+      },
+      {
+        mistake: "Treating compatibility support as endorsement",
+        fix: "Support exists so older code can keep running during migration, not because it is the recommended path."
+      }
+    ],
+    advancedOptions: [
+      {
+        title: "Migrate gradually if production code depends on old behavior",
+        body: "It is acceptable to keep compatibility code temporarily as long as new docs and new examples teach the current path."
+      }
+    ],
+    tryIt: [
+      "Pick one old example and rewrite it to the current grouped config path.",
+      "Move any remaining old pattern into a migration-only note.",
+      "Keep this page last in the reading order."
+    ],
+    links: [
+      { label: "Release notes", href: RELEASE_URL },
+      { label: "Repository", href: REPO_URL }
     ]
   })
 ];
+
+const GROUP_OVERVIEW_SUFFIX = "-overview";
+
+function toGroupParent(section) {
+  return {
+    id: section.id,
+    category: section.category,
+    title: section.title,
+    description: section.description,
+    groupOnly: true
+  };
+}
+
+function toOverviewChild(section) {
+  return {
+    ...section,
+    id: `${section.id}${GROUP_OVERVIEW_SUFFIX}`,
+    navParentId: section.id,
+    title: "Overview"
+  };
+}
+
+function buildGroupedSections(allSections) {
+  const sectionById = new Map(allSections.map((section) => [section.id, section]));
+  const output = [];
+  const pushed = new Set();
+
+  for (const section of allSections) {
+    if (pushed.has(section.id)) continue;
+    if (section.navParentId) continue;
+
+    const children = allSections.filter((item) => item.navParentId === section.id);
+    if (!children.length) {
+      output.push(section);
+      pushed.add(section.id);
+      continue;
+    }
+
+    output.push(toGroupParent(section));
+    pushed.add(section.id);
+
+    const overviewId = `${section.id}${GROUP_OVERVIEW_SUFFIX}`;
+    const explicitOverview = children.find((item) => item.id === overviewId);
+    if (explicitOverview) {
+      output.push(explicitOverview);
+      pushed.add(explicitOverview.id);
+    } else {
+      const autoOverview = toOverviewChild(section);
+      output.push(autoOverview);
+      pushed.add(autoOverview.id);
+    }
+
+    for (const child of children) {
+      if (child.id === overviewId) continue;
+      output.push(child);
+      pushed.add(child.id);
+    }
+  }
+
+  for (const section of allSections) {
+    if (pushed.has(section.id)) continue;
+    if (!section.navParentId || sectionById.has(section.navParentId)) {
+      output.push(section);
+      pushed.add(section.id);
+    }
+  }
+
+  return output;
+}
+
+export const sections = buildGroupedSections(rawSections);
 
 export const groupOrder = ["Get started", "Core concepts", "Reference"];
 
@@ -2789,14 +3560,19 @@ export function getSectionIndex(id) {
   return sections.findIndex((section) => section.id === id);
 }
 
+export function getFirstChildSection(parentId) {
+  return sections.find((section) => section.navParentId === parentId) || null;
+}
+
 export function getPrevNext(id) {
-  const currentIndex = getSectionIndex(id);
+  const navigable = sections.filter((section) => !section.groupOnly);
+  const currentIndex = navigable.findIndex((section) => section.id === id);
   if (currentIndex < 0) {
     return { previous: null, next: null };
   }
   return {
-    previous: currentIndex > 0 ? sections[currentIndex - 1] : null,
-    next: currentIndex < sections.length - 1 ? sections[currentIndex + 1] : null
+    previous: currentIndex > 0 ? navigable[currentIndex - 1] : null,
+    next: currentIndex < navigable.length - 1 ? navigable[currentIndex + 1] : null
   };
 }
 
@@ -2809,27 +3585,40 @@ export function groupSections(allSections = sections) {
   return grouped;
 }
 
+function pushBlockText(values, blocks) {
+  if (!Array.isArray(blocks)) return;
+  for (const block of blocks) {
+    values.push(block.title, block.body);
+    if (Array.isArray(block.bullets)) values.push(...block.bullets);
+    if (block.code) values.push(block.code);
+  }
+}
+
 function flattenPageText(section) {
   const values = [];
   values.push(section.title, section.description, section.category);
-  if (Array.isArray(section.whatYouBuild)) values.push(...section.whatYouBuild);
+  if (Array.isArray(section.whatThisPageIsFor)) values.push(...section.whatThisPageIsFor);
+  if (Array.isArray(section.whenToUse)) values.push(...section.whenToUse);
   if (Array.isArray(section.prerequisites)) values.push(...section.prerequisites);
-  if (Array.isArray(section.whyThisMatters)) values.push(...section.whyThisMatters);
   if (Array.isArray(section.tryIt)) values.push(...section.tryIt);
-  if (Array.isArray(section.steps)) {
-    for (const step of section.steps) {
-      values.push(step.title, step.body);
-    }
-  }
   if (Array.isArray(section.commonMistakes)) {
     for (const item of section.commonMistakes) {
       values.push(item.mistake, item.fix);
     }
   }
+  pushBlockText(values, section.steps);
+  pushBlockText(values, section.sampleOutput);
+  pushBlockText(values, section.advancedOptions);
+  pushBlockText(values, section.deprecatedNotes);
+  if (section.variablesTable?.rows?.length) {
+    values.push(...section.variablesTable.headers);
+    for (const row of section.variablesTable.rows) values.push(...row);
+  }
+  if (Array.isArray(section.links)) {
+    for (const link of section.links) values.push(link.label, link.href);
+  }
   if (Array.isArray(section.toc)) {
-    for (const item of section.toc) {
-      values.push(item.title);
-    }
+    for (const item of section.toc) values.push(item.title);
   }
 
   return values
@@ -2840,12 +3629,14 @@ function flattenPageText(section) {
 }
 
 export function getSearchDocuments() {
-  return sections.map((section) => ({
-    id: section.id,
-    category: section.category,
-    title: section.title,
-    description: section.description,
-    headings: (section.toc || []).map((item) => item.title),
-    text: flattenPageText(section)
-  }));
+  return sections
+    .filter((section) => !section.groupOnly)
+    .map((section) => ({
+      id: section.id,
+      category: section.category,
+      title: section.title,
+      description: section.description,
+      headings: (section.toc || []).map((item) => item.title),
+      text: flattenPageText(section)
+    }));
 }
