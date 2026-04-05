@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Navexa Docs</title>
+    <script>
+      (function () {
+        const pathSegmentsToKeep = 1;
+        const { location } = window;
+        const repoBase = location.pathname
+          .split("/")
+          .slice(0, 1 + pathSegmentsToKeep)
+          .join("/");
+        const routePath = location.pathname.slice(repoBase.length) || "/";
+        const redirectUrl =
+          repoBase +
+          "/?p=" +
+          encodeURIComponent(routePath) +
+          (location.search ? "&q=" + encodeURIComponent(location.search.slice(1)) : "") +
+          location.hash;
+
+        location.replace(redirectUrl);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

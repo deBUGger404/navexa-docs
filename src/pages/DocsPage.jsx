@@ -7,12 +7,15 @@ import {
   Rocket
 } from "../lib/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Play } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import BottomPager from "../components/BottomPager";
 import CodeBlock from "../components/CodeBlock";
 import DocTable from "../components/DocTable";
 import { getFirstChildSection, getSectionById, getPrevNext } from "../content/navexaDocs";
 import useBottomSentinel from "../hooks/useBottomSentinel";
+import Seo from "../components/Seo";
+import { buildPageMeta } from "../lib/seo";
 
 function OverviewHero({ section }) {
   if (!section.heroCode) return null;
@@ -37,6 +40,49 @@ function OverviewHero({ section }) {
     </section>
   );
 }
+
+function OverviewVideo() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoId = "XQ0S_gFz2-U";
+  const posterSrc = `${import.meta.env.BASE_URL}thumbnail.png`;
+  const embedSrc = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
+
+  return (
+    <section className="overview-video-section" aria-label="Navexa video walkthrough">
+      <div className="overview-video-head">
+        <h2>Video Walkthrough</h2>
+        <p>See the tree-first PDF indexing and vectorless RAG workflow in a short demo.</p>
+      </div>
+
+      <div className="overview-video-shell">
+        {isPlaying ? (
+          <iframe
+            className="overview-video-frame"
+            src={embedSrc}
+            title="Navexa overview video"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        ) : (
+          <button
+            type="button"
+            className="overview-video-poster"
+            onClick={() => setIsPlaying(true)}
+            aria-label="Play Navexa overview video"
+          >
+            <img src={posterSrc} alt="Navexa overview video" loading="lazy" decoding="async" />
+            <span className="overview-video-play" aria-hidden="true">
+              <Play size={22} fill="currentColor" strokeWidth={2.2} />
+            </span>
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 
 function LazyImageLink({ to, src, label, className, eager = false }) {
   const hostRef = useRef(null);
@@ -123,6 +169,7 @@ function OverviewPage({ section }) {
 
       <OverviewHero section={section} />
       <OverviewModels section={section} />
+      <OverviewVideo />
     </>
   );
 }
@@ -447,6 +494,8 @@ export default function DocsPage() {
 
   const { previous, next } = getPrevNext(section.id);
   const isOverview = section.id === "overview";
+  const { title: pageTitle, description: pageDescription, path: pagePath, type: pageType, structuredData } =
+    buildPageMeta(section);
 
   const fallbackNext = useMemo(() => {
     if (!next) return [];
@@ -460,15 +509,25 @@ export default function DocsPage() {
   }, [next]);
 
   return (
-    <main className={`content ${isOverview ? "content--overview" : "content--article"}`}>
-      {isOverview ? (
-        <OverviewPage section={section} />
-      ) : (
-        <ArticlePage section={section} fallbackNext={fallbackNext} />
-      )}
+    <>
+      <Seo
+        title={pageTitle}
+        description={pageDescription}
+        path={pagePath}
+        type={pageType}
+        structuredData={structuredData}
+      />
 
-      <div ref={sentinelRef} className="pager-sentinel" aria-hidden="true" />
-      <BottomPager previous={previous} next={next} visible={nearBottom} />
-    </main>
+      <main className={`content ${isOverview ? "content--overview" : "content--article"}`}>
+        {isOverview ? (
+          <OverviewPage section={section} />
+        ) : (
+          <ArticlePage section={section} fallbackNext={fallbackNext} />
+        )}
+
+        <div ref={sentinelRef} className="pager-sentinel" aria-hidden="true" />
+        <BottomPager previous={previous} next={next} visible={nearBottom} />
+      </main>
+    </>
   );
 }

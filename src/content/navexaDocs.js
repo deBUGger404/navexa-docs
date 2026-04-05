@@ -3,7 +3,8 @@ const PYPI_URL = "https://pypi.org/project/navexa/";
 const DOCS_URL = "https://debugger404.github.io/navexa-docs/";
 const RELEASE_URL = `${REPO_URL}/blob/main/RELEASE.md`;
 
-const asset = (fileName) => `${import.meta.env.BASE_URL}${fileName}`;
+const BASE_URL = import.meta.env?.BASE_URL || "/navexa-docs/";
+const asset = (fileName) => `${BASE_URL}${fileName}`;
 
 const table = (headers, rows, options = {}) => ({ headers, rows, ...options });
 const boolCell = (value, label = value ? "On" : "Off") => ({ kind: "bool", value, label });
@@ -251,8 +252,8 @@ const rawSections = [
     category: "Get started",
     title: "Navexa Library Docs",
     productsTitle: "Capabilities",
-    // description:
-    //   "Code-first documentation for Navexa. Start with the supported working path, then add parser control, reasoning, and compatibility only when you need them.",
+    description:
+      "Navexa documentation for PDF document processing, structured indexing, hierarchy-aware retrieval, grounded RAG pipelines, parser configuration, transcript workflows, and production-ready document trees.",
     heroCode: {
       title: "First successful index",
       language: "python",
